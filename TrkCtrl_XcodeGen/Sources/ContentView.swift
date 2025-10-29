@@ -15,6 +15,7 @@ struct ContentView: View {
             // ***************************************
             // MIDI Destination (kept simple for now)
             // ***************************************
+            /*
             HStack {
                 Text("MIDI Out").font(.subheadline).foregroundStyle(.secondary)
                 Spacer()
@@ -30,7 +31,9 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal, 4)
+            */
 
+            
             // ***************************************
             // TOP SECTION: Mixer + Macros (panel)\
             // ***************************************
