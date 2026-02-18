@@ -1,2 +1,2 @@
-# TrkCtrl
-An iPhone app designed to control the users Digital Audio Workstation over bluetooth
+# Ctrlr
+An iPhone app designed to control your Digital Audio Workstation over Bluetooth MIDI.

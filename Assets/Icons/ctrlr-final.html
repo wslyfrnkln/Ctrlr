@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ctrlr — Final D1 + Bonus C</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0c0c0c;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      padding: 40px;
+    }
+    
+    h1 {
+      text-align: center;
+      font-weight: 300;
+      font-size: 14px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 16px;
+    }
+    
+    h2 {
+      text-align: center;
+      font-weight: 300;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #333;
+      margin-bottom: 50px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .logo-card {
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 16px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+    
+    .variants {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .variant {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .variant-label {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #333;
+    }
+    
+    .logo-container {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .logo-container.on-white {
+      background: #f5f5f5;
+      border-radius: 20px;
+    }
+    
+    .divider {
+      width: 1px;
+      height: 70px;
+      background: #222;
+    }
+    
+    .logo-label {
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #555;
+      font-weight: 500;
+    }
+    
+    .logo-desc {
+      font-size: 10px;
+      color: #333;
+      text-align: center;
+      line-height: 1.6;
+      max-width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ctrlr — Final Options</h1>
+  <h2>D1 Refined + Bonus C-Shape</h2>
+  
+  <div class="grid">
+    
+    <!-- D1 FINAL -->
+    <div class="logo-card">
+      <span class="logo-label">D1 Final</span>
+      <div class="variants">
+        <div class="variant">
+          <div class="logo-container">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#141414"/>
+              
+              <!-- Vertical fader on left -->
+              <rect x="10" y="10" width="14" height="60" rx="3" fill="#050505"/>
+              <rect x="12" y="14" width="10" height="16" rx="2" fill="#4a4a4a"/>
+              <line x1="17" y1="20" x2="17" y2="26" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <!-- Transport buttons - aligned -->
+              <rect x="32" y="10" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="34" y="12" width="14" height="10" rx="2" fill="#ffcc00"/>
+              
+              <rect x="54" y="10" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="56" y="12" width="14" height="10" rx="2" fill="#00ff88"/>
+              
+              <!-- Record button - centered under transport gap -->
+              <circle cx="52" cy="42" r="14" fill="#2a2a2a"/>
+              <circle cx="52" cy="42" r="10" fill="#ff3b30"/>
+              
+              <!-- Small encoder - aligned under yellow button -->
+              <circle cx="41" cy="66" r="8" fill="#2a2a2a"/>
+              <circle cx="41" cy="66" r="5" fill="#3a3a3a"/>
+              <circle cx="41" cy="59" r="1.5" fill="#00ff88"/>
+              
+              <!-- LED - aligned under green button -->
+              <circle cx="63" cy="66" r="4" fill="#00ff88"/>
+            </svg>
+          </div>
+          <span class="variant-label">Full Color</span>
+        </div>
+        <div class="divider"></div>
+        <div class="variant">
+          <div class="logo-container">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#161616"/>
+              
+              <rect x="10" y="10" width="14" height="60" rx="3" fill="#0a0a0a"/>
+              <rect x="12" y="14" width="10" height="16" rx="2" fill="#4a4a4a"/>
+              <line x1="17" y1="20" x2="17" y2="26" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <rect x="32" y="10" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="34" y="12" width="14" height="10" rx="2" fill="#555"/>
+              
+              <rect x="54" y="10" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="56" y="12" width="14" height="10" rx="2" fill="#666"/>
+              
+              <circle cx="52" cy="42" r="14" fill="#2a2a2a"/>
+              <circle cx="52" cy="42" r="10" fill="#777"/>
+              
+              <circle cx="41" cy="66" r="8" fill="#2a2a2a"/>
+              <circle cx="41" cy="66" r="5" fill="#3a3a3a"/>
+              <circle cx="41" cy="59" r="1.5" fill="#888"/>
+              
+              <circle cx="63" cy="66" r="4" fill="#888"/>
+            </svg>
+          </div>
+          <span class="variant-label">Mono</span>
+        </div>
+        <div class="divider"></div>
+        <div class="variant">
+          <div class="logo-container on-white">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <!-- No border, just the icon -->
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#1a1a1a"/>
+              
+              <rect x="10" y="10" width="14" height="60" rx="3" fill="#0a0a0a"/>
+              <rect x="12" y="14" width="10" height="16" rx="2" fill="#555"/>
+              <line x1="17" y1="20" x2="17" y2="26" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <rect x="32" y="10" width="18" height="14" rx="3" fill="#333"/>
+              <rect x="34" y="12" width="14" height="10" rx="2" fill="#e6b800"/>
+              
+              <rect x="54" y="10" width="18" height="14" rx="3" fill="#333"/>
+              <rect x="56" y="12" width="14" height="10" rx="2" fill="#00dd77"/>
+              
+              <circle cx="52" cy="42" r="14" fill="#333"/>
+              <circle cx="52" cy="42" r="10" fill="#dd3328"/>
+              
+              <circle cx="41" cy="66" r="8" fill="#333"/>
+              <circle cx="41" cy="66" r="5" fill="#444"/>
+              <circle cx="41" cy="59" r="1.5" fill="#00dd77"/>
+              
+              <circle cx="63" cy="66" r="4" fill="#00dd77"/>
+            </svg>
+          </div>
+          <span class="variant-label">Light BG</span>
+        </div>
+      </div>
+      <span class="logo-desc">Aligned layout • Fader left • Transport + record right</span>
+    </div>
+    
+    <!-- BONUS: C-Shape Flow -->
+    <div class="logo-card">
+      <span class="logo-label">Bonus: C-Shape</span>
+      <div class="variants">
+        <div class="variant">
+          <div class="logo-container">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#141414"/>
+              
+              <!-- C-shape flow: Green (top right) → Yellow (top left) → Fader (left) → Record (bottom) -->
+              
+              <!-- Green button - top right (start of C) -->
+              <rect x="54" y="8" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="56" y="10" width="14" height="10" rx="2" fill="#00ff88"/>
+              
+              <!-- Yellow button - top left (C curves left) -->
+              <rect x="28" y="8" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="30" y="10" width="14" height="10" rx="2" fill="#ffcc00"/>
+              
+              <!-- Vertical fader - left side (C goes down) -->
+              <rect x="8" y="26" width="14" height="46" rx="3" fill="#050505"/>
+              <rect x="10" y="30" width="10" height="16" rx="2" fill="#4a4a4a"/>
+              <line x1="15" y1="36" x2="15" y2="42" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <!-- Record button - bottom center-right (C curves back) -->
+              <circle cx="52" cy="56" r="16" fill="#2a2a2a"/>
+              <circle cx="52" cy="56" r="12" fill="#ff3b30"/>
+              
+              <!-- Small encoder - bridges fader and record -->
+              <circle cx="32" cy="56" r="8" fill="#2a2a2a"/>
+              <circle cx="32" cy="56" r="5" fill="#3a3a3a"/>
+              <circle cx="32" cy="49" r="1.5" fill="#00ff88"/>
+            </svg>
+          </div>
+          <span class="variant-label">Full Color</span>
+        </div>
+        <div class="divider"></div>
+        <div class="variant">
+          <div class="logo-container">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#161616"/>
+              
+              <rect x="54" y="8" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="56" y="10" width="14" height="10" rx="2" fill="#666"/>
+              
+              <rect x="28" y="8" width="18" height="14" rx="3" fill="#2a2a2a"/>
+              <rect x="30" y="10" width="14" height="10" rx="2" fill="#555"/>
+              
+              <rect x="8" y="26" width="14" height="46" rx="3" fill="#0a0a0a"/>
+              <rect x="10" y="30" width="10" height="16" rx="2" fill="#4a4a4a"/>
+              <line x1="15" y1="36" x2="15" y2="42" stroke="#666" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <circle cx="52" cy="56" r="16" fill="#2a2a2a"/>
+              <circle cx="52" cy="56" r="12" fill="#777"/>
+              
+              <circle cx="32" cy="56" r="8" fill="#2a2a2a"/>
+              <circle cx="32" cy="56" r="5" fill="#3a3a3a"/>
+              <circle cx="32" cy="49" r="1.5" fill="#888"/>
+            </svg>
+          </div>
+          <span class="variant-label">Mono</span>
+        </div>
+        <div class="divider"></div>
+        <div class="variant">
+          <div class="logo-container on-white">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <rect x="0" y="0" width="80" height="80" rx="16" fill="#1a1a1a"/>
+              
+              <rect x="54" y="8" width="18" height="14" rx="3" fill="#333"/>
+              <rect x="56" y="10" width="14" height="10" rx="2" fill="#00dd77"/>
+              
+              <rect x="28" y="8" width="18" height="14" rx="3" fill="#333"/>
+              <rect x="30" y="10" width="14" height="10" rx="2" fill="#e6b800"/>
+              
+              <rect x="8" y="26" width="14" height="46" rx="3" fill="#0a0a0a"/>
+              <rect x="10" y="30" width="10" height="16" rx="2" fill="#555"/>
+              <line x1="15" y1="36" x2="15" y2="42" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+              
+              <circle cx="52" cy="56" r="16" fill="#333"/>
+              <circle cx="52" cy="56" r="12" fill="#dd3328"/>
+              
+              <circle cx="32" cy="56" r="8" fill="#333"/>
+              <circle cx="32" cy="56" r="5" fill="#444"/>
+              <circle cx="32" cy="49" r="1.5" fill="#00dd77"/>
+            </svg>
+          </div>
+          <span class="variant-label">Light BG</span>
+        </div>
+      </div>
+      <span class="logo-desc">C-shape flow • Green → Yellow → Fader → Record</span>
+    </div>
+    
+  </div>
+</body>
+</html>
