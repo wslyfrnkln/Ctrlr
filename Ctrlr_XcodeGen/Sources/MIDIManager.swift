@@ -225,5 +225,9 @@ final class MIDIManager: ObservableObject {
     func sendNoteOff(note: UInt8, channel: UInt8 = 0)                       { sendPacket([0x80 | channel, note, 0]) }
     func sendCC(cc: UInt8, value: UInt8, channel: UInt8 = 0)                { sendPacket([0xB0 | channel, cc, value]) }
 
+    /// Universal Real-Time MMC: F0 7F 7F 06 <cmd> F7
+    /// Stop=0x01, Play=0x02, Record=0x06
+    func sendMMC(command: UInt8)                                             { sendPacket([0xF0, 0x7F, 0x7F, 0x06, command, 0xF7]) }
+
     func clearError() { lastError = nil; if selectedDestination != nil { connectionState = .connected } }
 }

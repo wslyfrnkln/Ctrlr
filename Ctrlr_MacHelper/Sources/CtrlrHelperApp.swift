@@ -22,6 +22,9 @@ struct CtrlrHelperApp: App {
 struct MenuBarContent: View {
     @ObservedObject var manager: ConnectionManager
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @AppStorage("selectedDAW") private var selectedDAW = "ableton"
+    @State private var scriptInstalled = ScriptInstaller.isInstalled
+    @State private var installError: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -113,6 +116,77 @@ struct MenuBarContent: View {
 
             Divider()
 
+            // DAW Picker
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("DAW")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Picker("", selection: $selectedDAW) {
+                        Text("Ableton Live").tag("ableton")
+                        Text("Logic Pro").tag("logic")
+                        Text("Other").tag("other")
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .frame(width: 120)
+                }
+
+                if selectedDAW == "ableton" {
+                    if scriptInstalled {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                                .font(.system(size: 12))
+                            Text("Script installed")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Button(action: {
+                            installError = nil
+                            do {
+                                try ScriptInstaller.install()
+                                scriptInstalled = true
+                            } catch {
+                                installError = error.localizedDescription
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.down.circle")
+                                    .font(.system(size: 12))
+                                Text("Install Script")
+                                    .font(.system(size: 12))
+                                Spacer()
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundColor(.accentColor)
+                    }
+                } else if selectedDAW == "logic" {
+                    Text("Enable MMC: Logic → Synchronization → MIDI → Listen to MMC")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("MIDI signals available for manual mapping")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+
+                if let err = installError {
+                    Text(err)
+                        .font(.system(size: 10))
+                        .foregroundColor(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            Divider()
+
             // Debug
             VStack(alignment: .leading, spacing: 3) {
                 ForEach(manager.debugLines, id: \.self) { line in
@@ -142,6 +216,6 @@ struct MenuBarContent: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
         }
-        .frame(width: 240)
+        .frame(width: 260)
     }
 }

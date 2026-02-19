@@ -8,14 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		54631F58FE1EC770C4739214 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7CA6FFFD37224068F379DC /* ContentView.swift */; };
-		911D171C8054F956BC751BE5 /* TrkCtrlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259CACDA3EF08600AA63F4FB /* TrkCtrlApp.swift */; };
+		911D171C8054F956BC751BE5 /* CtrlrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 259CACDA3EF08600AA63F4FB /* CtrlrApp.swift */; };
 		AF781D05242DB8DA5C31BDBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E2FC866B98D947C86BB237A0 /* Assets.xcassets */; };
 		B8F843FFA7FBC101DF977B3A /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DD74525E7619B3F84A1730D /* AppModel.swift */; };
 		E9254C59F8C3F81CE3660F90 /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317B4218098FCFA3653244C1 /* MIDIManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		259CACDA3EF08600AA63F4FB /* TrkCtrlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrkCtrlApp.swift; sourceTree = "<group>"; };
+		259CACDA3EF08600AA63F4FB /* CtrlrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CtrlrApp.swift; sourceTree = "<group>"; };
 		2DD74525E7619B3F84A1730D /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		317B4218098FCFA3653244C1 /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
 		6DCA1807DEBDE99E55F4E9F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -33,7 +33,7 @@
 				9D7CA6FFFD37224068F379DC /* ContentView.swift */,
 				6DCA1807DEBDE99E55F4E9F1 /* Info.plist */,
 				317B4218098FCFA3653244C1 /* MIDIManager.swift */,
-				259CACDA3EF08600AA63F4FB /* TrkCtrlApp.swift */,
+				259CACDA3EF08600AA63F4FB /* CtrlrApp.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -57,7 +57,7 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AC6A4C5D9DE6F0E0B4A0E04E /* Signal */ = {
+		AC6A4C5D9DE6F0E0B4A0E04E /* Ctrlr */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D79D973A7FB99E3A44CF8227 /* Build configuration list for PBXNativeTarget "Ctrlr" */;
 			buildPhases = (
@@ -82,7 +82,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2620;
 			};
 			buildConfigurationList = 4294BC7AC0BF0C21034A213E /* Build configuration list for PBXProject "Ctrlr" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -97,7 +97,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AC6A4C5D9DE6F0E0B4A0E04E /* Signal */,
+				AC6A4C5D9DE6F0E0B4A0E04E /* Ctrlr */,
 			);
 		};
 /* End PBXProject section */
@@ -121,7 +121,7 @@
 				B8F843FFA7FBC101DF977B3A /* AppModel.swift in Sources */,
 				54631F58FE1EC770C4739214 /* ContentView.swift in Sources */,
 				E9254C59F8C3F81CE3660F90 /* MIDIManager.swift in Sources */,
-				911D171C8054F956BC751BE5 /* TrkCtrlApp.swift in Sources */,
+				911D171C8054F956BC751BE5 /* CtrlrApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,7 +133,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = UQH23Q44F9;
 				INFOPLIST_FILE = Sources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -150,6 +149,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -181,8 +181,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = UQH23Q44F9;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -196,6 +198,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -207,6 +210,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -238,8 +242,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = UQH23Q44F9;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -260,6 +266,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -272,7 +279,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = UQH23Q44F9;
 				INFOPLIST_FILE = Sources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (

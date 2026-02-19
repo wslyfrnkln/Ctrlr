@@ -687,6 +687,7 @@ struct TransportSection: View {
                         model.isRecording = false
                         midi.sendNoteOn(note: model.noteStop)
                         midi.sendNoteOff(note: model.noteStop)
+                        midi.sendMMC(command: 0x01)
                     }
                 }
             )
@@ -700,6 +701,7 @@ struct TransportSection: View {
                         model.isPlaying = true
                         midi.sendNoteOn(note: model.notePlay)
                         midi.sendNoteOff(note: model.notePlay)
+                        midi.sendMMC(command: 0x02)
                     }
                 )
 
@@ -712,6 +714,7 @@ struct TransportSection: View {
                         }
                         midi.sendNoteOn(note: model.noteRecord)
                         midi.sendNoteOff(note: model.noteRecord)
+                        midi.sendMMC(command: 0x06)
                     }
                 )
             }

@@ -13,5 +13,7 @@ targets:
       CODE_SIGN_ENTITLEMENTS: Sources/CtrlrHelper.entitlements
     sources:
       - path: Sources
+    resources:
+      - path: Resources
     scheme:
       testTargets: []
