@@ -3,3 +3,6 @@ PROJECT_TRACKER.txt
 CLAUDE.md
 node_modules/
 Documentation/docs-site/.next/
+Ctrlr_MacHelper/build/
+*.xcuserstate
+xcuserdata/
