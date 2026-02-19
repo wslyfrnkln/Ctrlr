@@ -19,4 +19,7 @@
         <string>_apple-midi._tcp</string>
         <string>_apple-midi._udp</string>
     </array>
+    <key>UIAppFonts</key><array>
+        <string>Digital Dismay.otf</string>
+    </array>
     <key>UILaunchScreen</key><dict/></dict></plist>

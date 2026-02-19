@@ -194,6 +194,22 @@ struct MenuBarContent: View {
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundColor(.secondary)
                 }
+
+                Button(action: {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(manager.diagnosticText, forType: .string)
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 9))
+                        Text("Copy")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(.secondary)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)

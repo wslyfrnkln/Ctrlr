@@ -38,12 +38,12 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            VStack(spacing: 4) {
                 // ═══════════════════════════════════════════════════
                 // HEADER: Connection status + DEVICES button
                 // ═══════════════════════════════════════════════════
                 HeaderView(midi: midi, showDevicePicker: $showDevicePicker)
-                    .padding(.top, 50)
+                    .padding(.top, -10)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 6)
 
@@ -52,6 +52,7 @@ struct ContentView: View {
                 // ═══════════════════════════════════════════════════
                 TabSelector(activeTab: $activeTab)
                     .padding(.horizontal, 10)
+                    .padding(.top, 8)
                     .padding(.bottom, 8)
 
                 // ═══════════════════════════════════════════════════
@@ -63,7 +64,8 @@ struct ContentView: View {
                     midi: midi
                 )
                 .padding(.horizontal, 10)
-                .frame(height: 280) // Increased from 200 for better visibility
+                .padding(.top, 8)
+                .frame(height: 260)
 
                 // ═══════════════════════════════════════════════════
                 // ARM / LOOP SECTION: Track arming and loop toggle
@@ -73,24 +75,23 @@ struct ContentView: View {
                     loopOn: $loopOn,
                     midi: midi
                 )
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 18)
                 .padding(.top, 12)
                 .padding(.bottom, 10)
+                .frame(height: 90)
 
                 // ═══════════════════════════════════════════════════
                 // TRANSPORT CONTROLS: STOP, PLAY, RECORD buttons
                 // ═══════════════════════════════════════════════════
                 TransportSection(model: model, midi: midi)
                     .padding(.horizontal, 10)
-                    .padding(.bottom, 8)
-
-                // Minimal spacer to push content up and fill screen
-                Spacer(minLength: 8)
+                    .padding(.bottom, 10)
+                    .frame(height: 230)
 
                 // ═══════════════════════════════════════════════════
-                // HOME INDICATOR: iPhone-style gesture bar
+                // CONSOLE BRANDING
                 // ═══════════════════════════════════════════════════
-                HomeIndicator()
+                ConsoleBranding()
             }
         }
         .preferredColorScheme(.dark)
@@ -142,11 +143,11 @@ struct HeaderView: View {
                     // LED indicator with glow effect
                     Circle()
                         .fill(statusColor)
-                        .frame(width: 6, height: 6)
+                        .frame(width: 8, height: 8)
                         .shadow(color: statusColor, radius: 8)
 
                     Text(statusText)
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#555555"))
                 }
@@ -159,7 +160,7 @@ struct HeaderView: View {
                     showDevicePicker = true
                 }) {
                     Text("DEVICES")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .tracking(1.5)
                         .foregroundColor(Color(hex: "#ff6b35"))
                         .padding(.horizontal, 10)
@@ -456,14 +457,14 @@ struct FaderKnob: View {
 struct QuickAccessView: View {
     @ObservedObject var midi: MIDIManager
 
-    // Macro definitions: icon, color, MIDI note (6 buttons in 2x3 grid)
-    let macros: [(icon: String, color: String, note: UInt8, name: String)] = [
-        ("↶", "#ff6b35", 68, "UNDO"),      // U+21B6 anticlockwise top semicircle arrow
-        ("↷", "#ff6b35", 69, "REDO"),      // U+21B7 clockwise top semicircle arrow
-        ("⊕", "#00d4ff", 70, "DUPLICATE"),
-        ("◆", "#ff3b30", 73, "DELETE"),
-        ("⚑", "#ffcc00", 72, "MARKER"),
-        ("≡", "#9b59b6", 74, "MENU")
+    // Macro definitions: icon, color, MIDI note, optional MMC command
+    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
+        ("↶", "#ff6b35", 68, "UNDO", nil),
+        ("↷", "#ff6b35", 69, "REDO", nil),
+        ("⊕", "#00d4ff", 70, "DUPLICATE", nil),
+        ("◆", "#ff3b30", 73, "DELETE", nil),
+        ("≪", "#3498db", 81, "RWD", 0x05),   // MMC Rewind
+        ("≫", "#3498db", 82, "FWD", 0x04)    // MMC Fast Forward
     ]
 
     var body: some View {
@@ -473,20 +474,31 @@ struct QuickAccessView: View {
                 .tracking(1.5)
                 .foregroundColor(Color(hex: "#444444"))
 
-            // 2x3 grid (2 columns, 3 rows)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                ForEach(0..<6, id: \.self) { i in
-                    MacroButton(
-                        icon: macros[i].icon,
-                        color: macros[i].color,
-                        action: {
-                            midi.sendNoteOn(note: macros[i].note)
-                            midi.sendNoteOff(note: macros[i].note)
+            // 3 rows of 2 — VStack of HStacks so rows can stretch to fill height
+            VStack(spacing: 8) {
+                ForEach(0..<3, id: \.self) { row in
+                    HStack(spacing: 8) {
+                        ForEach(0..<2, id: \.self) { col in
+                            let i = row * 2 + col
+                            MacroButton(
+                                icon: macros[i].icon,
+                                color: macros[i].color,
+                                action: {
+                                    midi.sendNoteOn(note: macros[i].note)
+                                    midi.sendNoteOff(note: macros[i].note)
+                                    if let mmc = macros[i].mmc {
+                                        midi.sendMMC(command: mmc)
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
+                    .frame(maxHeight: .infinity)
                 }
             }
+            .frame(maxHeight: .infinity)
         }
+        .frame(maxHeight: .infinity)
     }
 }
 
@@ -499,14 +511,14 @@ struct QuickAccessView: View {
 struct FullMacrosView: View {
     @ObservedObject var midi: MIDIManager
 
-    // All 12 macro definitions
-    let macros: [(icon: String, color: String, note: UInt8, name: String)] = [
-        ("↶", "#ff6b35", 68, "UNDO"), ("↷", "#ff6b35", 69, "REDO"),
-        ("+", "#00d4ff", 70, "ADD"), ("⚑", "#ffcc00", 72, "MARKER"),
-        ("◆", "#ff3b30", 73, "DELETE"), ("●", "#00ff88", 74, "RECORD"),
-        ("■", "#9b59b6", 75, "STOP"), ("▲", "#3498db", 76, "UP"),
-        ("◀", "#e74c3c", 77, "LEFT"), ("▶", "#2ecc71", 78, "RIGHT"),
-        ("⬟", "#f39c12", 79, "OPTIONS"), ("✦", "#1abc9c", 80, "FAVORITE")
+    // All 12 macro definitions (note + optional MMC)
+    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
+        ("↶", "#ff6b35", 68, "UNDO", nil), ("↷", "#ff6b35", 69, "REDO", nil),
+        ("+", "#00d4ff", 70, "ADD", nil), ("⚑", "#ffcc00", 72, "MARKER", nil),
+        ("◆", "#ff3b30", 73, "DELETE", nil), ("●", "#00ff88", 74, "RECORD", nil),
+        ("■", "#9b59b6", 75, "STOP", nil), ("▲", "#3498db", 76, "UP", nil),
+        ("≪", "#3498db", 81, "RWD", 0x05), ("≫", "#3498db", 82, "FWD", 0x04),
+        ("⬟", "#f39c12", 79, "OPTIONS", nil), ("✦", "#1abc9c", 80, "FAVORITE", nil)
     ]
 
     var body: some View {
@@ -518,6 +530,9 @@ struct FullMacrosView: View {
                     action: {
                         midi.sendNoteOn(note: macros[i].note)
                         midi.sendNoteOff(note: macros[i].note)
+                        if let mmc = macros[i].mmc {
+                            midi.sendMMC(command: mmc)
+                        }
                     }
                 )
             }
@@ -586,25 +601,27 @@ struct ArmLoopSection: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            // ARM button: Enables track recording
+            // ARM button: Momentary CC pulse — Ableton toggles internally
             ArmLoopButton(
                 label: "ARM",
                 isActive: armOn,
                 color: "#ff3b30",
                 action: {
                     armOn.toggle()
-                    midi.sendCC(cc: 65, value: armOn ? 127 : 0)
+                    midi.sendCC(cc: 65, value: 127)
+                    midi.sendCC(cc: 65, value: 0)
                 }
             )
 
-            // LOOP button: Enables loop mode
+            // LOOP button: Momentary CC pulse — Ableton toggles internally
             ArmLoopButton(
                 label: "LOOP",
                 isActive: loopOn,
                 color: "#ff9500",
                 action: {
                     loopOn.toggle()
-                    midi.sendCC(cc: 66, value: loopOn ? 127 : 0)
+                    midi.sendCC(cc: 66, value: 127)
+                    midi.sendCC(cc: 66, value: 0)
                 }
             )
         }
@@ -874,6 +891,39 @@ struct TransportRecordButton: View {
 }
 
 // =========================================================================
+// MARK: - Console Branding: Silk-screen style label at bottom
+// =========================================================================
+// "CTRLR" in Digital Dismay font — mimics hardware console panel labeling.
+// Requires DigitalDismay.ttf in Sources/ and UIAppFonts in Info.plist.
+// =========================================================================
+
+struct ConsoleBranding: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Rectangle()
+                .fill(Color.white.opacity(0.5))
+                .frame(height: 0.6)
+
+            Text("CTRLR")
+                .font(.custom("DigitalDismay", size: 25))
+                .tracking(8)
+                .foregroundColor(Color.white.opacity(0.250))
+                .fixedSize()
+                .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
+                .padding(.horizontal, 60)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.5))
+                .frame(height: 0.6)
+        }
+        .padding(.horizontal, 26)
+        .padding(.top, 10)
+        .padding(.bottom, 15)
+    }
+}
+
+
+// =========================================================================
 // MARK: - Home Indicator: iPhone Gesture Bar
 // =========================================================================
 // Small rounded bar at bottom matching iOS home indicator
@@ -928,54 +978,89 @@ struct DevicePickerView: View {
                         .scrollContentBackground(.hidden)
                     }
 
-                    // Debug footer
-                    VStack(spacing: 10) {
+                    // Diagnostic footer
+                    VStack(spacing: 0) {
                         Divider()
 
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("\(midi.destinations.count) DESTINATIONS FOUND")
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                    .tracking(1)
-                                    .foregroundColor(Color(hex: "#444444"))
-                                if let name = midi.selectedDestination.map({ midi.name(for: $0) }) {
-                                    Text("→ \(name)")
-                                        .font(.system(size: 9, design: .monospaced))
-                                        .foregroundColor(Color(hex: "#00ff88"))
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                }
-                                Text("TCP: \(midi.listenerDebug)")
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#666666"))
-                                Text("MAC: \(midi.companionDebug)")
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#666666"))
-                                Text("incoming: \(midi.incomingCount)")
-                                    .font(.system(size: 9, design: .monospaced))
-                                    .foregroundColor(Color(hex: "#666666"))
-                            }
-                            Spacer()
+                        // Network status
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("NETWORK")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .tracking(1.5)
+                                .foregroundColor(Color(hex: "#555555"))
+                                .padding(.top, 10)
+                                .padding(.bottom, 4)
+
+                            DiagnosticRow(label: "TCP", value: midi.listenerDebug,
+                                          isOK: midi.listenerDebug.contains("listening"))
+                            DiagnosticRow(label: "SVC", value: midi.serviceDebug,
+                                          isOK: midi.serviceDebug != "not registered" && midi.serviceDebug != "removed")
+                            DiagnosticRow(label: "MAC", value: midi.companionDebug,
+                                          isOK: midi.companionConnected)
+                            DiagnosticRow(label: "IP", value: midi.localIP,
+                                          isOK: midi.localIP != "—")
+                            DiagnosticRow(label: "IN", value: "\(midi.incomingCount)",
+                                          isOK: nil)
                         }
                         .padding(.horizontal, 16)
 
-                        Button(action: { midi.reconnect() }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "arrow.clockwise")
-                                    .font(.system(size: 14, weight: .semibold))
-                                Text("RECONNECT")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .tracking(2)
+                        // MIDI status
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("MIDI")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .tracking(1.5)
+                                .foregroundColor(Color(hex: "#555555"))
+                                .padding(.top, 8)
+                                .padding(.bottom, 4)
+
+                            DiagnosticRow(label: "DST", value: "\(midi.destinations.count)",
+                                          isOK: !midi.destinations.isEmpty)
+                            DiagnosticRow(label: "SEL", value: midi.selectedDestinationName,
+                                          isOK: midi.selectedDestination != nil)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 8)
+
+                        HStack(spacing: 12) {
+                            Button(action: { midi.reconnect() }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.clockwise")
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text("RESTART ALL")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .tracking(1)
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color(hex: "#00d4ff").opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color(hex: "#00d4ff").opacity(0.4), lineWidth: 1)
+                                )
+                                .cornerRadius(10)
                             }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color(hex: "#00d4ff").opacity(0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color(hex: "#00d4ff").opacity(0.4), lineWidth: 1)
-                            )
-                            .cornerRadius(10)
+
+                            Button(action: {
+                                UIPasteboard.general.string = midi.diagnosticText
+                            }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text("COPY")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .tracking(1)
+                                }
+                                .foregroundColor(.white)
+                                .padding(.vertical, 14)
+                                .padding(.horizontal, 20)
+                                .background(Color(hex: "#333333").opacity(0.5))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color(hex: "#444444"), lineWidth: 1)
+                                )
+                                .cornerRadius(10)
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
@@ -995,6 +1080,30 @@ struct DevicePickerView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+}
+
+// Diagnostic row: colored dot + label + value
+struct DiagRow: View {
+    let label: String
+    let value: String
+    let ok: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(ok ? Color(hex: "#00ff88") : Color(hex: "#555555"))
+                .frame(width: 5, height: 5)
+            Text(label)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(Color(hex: "#555555"))
+                .frame(width: 28, alignment: .leading)
+            Text(value)
+                .font(.system(size: 9, design: .monospaced))
+                .foregroundColor(ok ? Color(hex: "#00ff88") : Color(hex: "#666666"))
+                .lineLimit(1)
+                .truncationMode(.tail)
+        }
     }
 }
 
@@ -1160,6 +1269,106 @@ struct SetupGuideView: View {
         }
     }
 }
+
+// =========================================================================
+// MARK: - Diagnostic Row
+// =========================================================================
+
+struct DiagnosticRow: View {
+    let label: String
+    let value: String
+    let isOK: Bool?  // nil = neutral (no indicator logic)
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: 5, height: 5)
+                .shadow(color: isOK == true ? dotColor.opacity(0.6) : .clear, radius: 3)
+            Text(label)
+                .foregroundColor(Color(hex: "#555555"))
+            Text(value)
+                .foregroundColor(Color(hex: "#999999"))
+            Spacer()
+        }
+        .font(.system(size: 10, design: .monospaced))
+        .padding(.vertical, 1.5)
+    }
+
+    private var dotColor: Color {
+        switch isOK {
+        case .some(true):  return Color(hex: "#00ff88")
+        case .some(false): return Color(hex: "#ff4444")
+        case .none:        return Color(hex: "#444444")
+        }
+    }
+}
+
+// =========================================================================
+// MARK: - Previews
+// =========================================================================
+
+#if DEBUG
+
+/// Full app — use this to preview the complete layout end-to-end
+#Preview("Full App") {
+    ContentView()
+}
+
+/// Isolated branding label — tweak font size, tracking, opacity here
+#Preview("Console Branding") {
+    ZStack {
+        Color(hex: "#0c0c0c").ignoresSafeArea()
+        VStack {
+            Spacer()
+            ConsoleBranding()
+            HomeIndicator()
+        }
+    }
+}
+
+/// Transport controls in isolation
+#Preview("Transport") {
+    ZStack {
+        Color(hex: "#0c0c0c").ignoresSafeArea()
+        TransportSection(model: AppModel(), midi: MIDIManager())
+            .padding(.horizontal, 10)
+    }
+}
+
+/// ARM / LOOP buttons — test active/inactive states
+#Preview("Arm Loop") {
+    ZStack {
+        Color(hex: "#0c0c0c").ignoresSafeArea()
+        VStack(spacing: 12) {
+            ArmLoopSection(armOn: .constant(false), loopOn: .constant(true),  midi: MIDIManager())
+            ArmLoopSection(armOn: .constant(true),  loopOn: .constant(false), midi: MIDIManager())
+        }
+        .padding(.horizontal, 10)
+    }
+}
+
+/// MIXER tab content — fader + quick access macros
+#Preview("Mixer Tab") {
+    ZStack {
+        Color(hex: "#0c0c0c").ignoresSafeArea()
+        MainContentArea(activeTab: .mixer, model: AppModel(), midi: MIDIManager())
+            .padding(.horizontal, 10)
+            .frame(height: 280)
+    }
+}
+
+/// MACROS tab content — full 12-button grid
+#Preview("Macros Tab") {
+    ZStack {
+        Color(hex: "#0c0c0c").ignoresSafeArea()
+        MainContentArea(activeTab: .macros, model: AppModel(), midi: MIDIManager())
+            .padding(.horizontal, 10)
+            .frame(height: 280)
+    }
+}
+
+#endif
 
 // =========================================================================
 // MARK: - Color Extension: Hex String to SwiftUI Color

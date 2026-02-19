@@ -1,6 +1,6 @@
-# TrkCtrl minimal mapping
+# Ctrlr minimal mapping
 [Device]
-InputName=TrkCtrl Input
+InputName=Ctrlr
 OutputName=
 
 Channel=1

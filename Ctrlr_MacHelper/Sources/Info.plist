@@ -13,6 +13,7 @@
     <key>LSUIElement</key><true/>
     <key>NSLocalNetworkUsageDescription</key><string>CtrlrHelper connects to the Ctrlr iOS app on your local network to relay MIDI to your DAW.</string>
     <key>NSBonjourServices</key><array>
+        <string>_ctrlr._tcp</string>
         <string>_apple-midi._tcp</string>
         <string>_apple-midi._udp</string>
     </array>

@@ -1,0 +1,346 @@
+================================================================================
+                         Ctrlr - PROJECT TRACKER
+================================================================================
+Last Updated: 2026-02-19 (session 5)
+Version: 1.0 (Build 1)
+Bundle ID: com.sinaudio.Ctrlr
+Company: SinAudio
+
+================================================================================
+                              CHANGE LOG
+================================================================================
+
+[2026-02-19] - Session 5: Diagnostic UI, Dual MIDI Port, ARM/LOOP Fix
+  - ContentView.swift: Replaced plain-text diagnostic panel with styled status rows —
+    green/red/neutral dots per field, split into NETWORK (TCP, SVC, MAC, IP, IN) and
+    MIDI (DST, SEL) sections with DiagnosticRow component
+  - ContentView.swift: Added Fwd (≫) and Rwd (≪) buttons to Quick Access (bottom row)
+    and Full Macros grid — send both MIDI note + MMC SysEx (FF=0x04, RWD=0x05)
+  - ContentView.swift: Fixed ARM/LOOP double-press bug — was sending toggle CC values
+    (127/0 alternating); now sends momentary pulse (127 then 0) every press so Ableton's
+    is_momentary ButtonElement toggles correctly on each press
+  - ConnectionManager.swift: Added second virtual MIDI port "Ctrlr Map" alongside "Ctrlr"
+    — all incoming MIDI routed to both ports. "Ctrlr" is claimed by Ableton remote script,
+    "Ctrlr Map" can be set to Remote in Ableton prefs for MIDI Learn
+  - CtrlrHelperApp.swift: Added Copy button to Mac helper debug section (NSPasteboard)
+  - ConnectionManager.swift: Added diagnosticText computed property for clipboard copy
+  - UserConfiguration.txt: Fixed InputName from "TrkCtrl Input" to "Ctrlr"
+  - Reinstalled Ableton remote script to ~/Music/Ableton/User Library/Remote Scripts/Ctrlr/
+
+[2026-02-18] - Session 4: TCP Connection Debugging + UI Fine-Tuning
+  - MIDIManager.swift: NWListener changed from random port (.any) to fixed port 51235
+  - MIDIManager.swift: Fixed acceptMacConnection race condition — old connection's
+    .cancelled state handler would null out macConnection after it was replaced by
+    a new connection; fixed with [weak connection] capture + identity check
+  - ConnectionManager.swift: Fixed double-browse race condition in reconnect() —
+    was calling startBrowsing() directly AND via .cancelled handler; now only
+    .cancelled handler calls startBrowsing()
+  - ConnectionManager.swift: Added @Published connectedEndpoint — shows resolved
+    host:port in debug panel persistently (was transient before)
+  - ContentView.swift: UI fine-tuning — padding, Digital Dismay font (ConsoleBranding),
+    section heights (fader=260, arm=90, transport=230), spacing, QuickAccessView uses
+    VStack of HStack rows for fill height
+  - screenshots.sh: Created App Store screenshot resize script (sips, no deps)
+  - Screenshots/source/: App Store screenshot workflow set up
+  - Privacy policy: docs-site scrapped, hosted on GitHub instead
+  NOTE: TCP connection issue still being debugged — see TO-DO for steps
+
+[2026-02-18] - Phase 3: MMC Support + DAW Picker + Ableton Auto-Install
+  - MIDIManager.swift: Added sendMMC(command:) — F0 7F 7F 06 <cmd> F7 Universal Real-Time SysEx
+  - ContentView.swift: TransportSection calls sendMMC alongside note sends (Stop=0x01, Play=0x02, Record=0x06)
+  - Ctrlr_MacHelper/Resources/AbletonScript/: Added __init__.py + Ctrlr.py (bundled copies of remote script)
+  - Ctrlr_MacHelper/project.yml: Added resources: path: Resources
+  - Ctrlr_MacHelper/Sources/ScriptInstaller.swift: NEW — isInstalled, install(), InstallError
+  - Ctrlr_MacHelper/Sources/CtrlrHelperApp.swift: DAW picker (Ableton/Logic/Other), install button for Ableton,
+    MMC instructions for Logic, manual mapping note for Other; @AppStorage("selectedDAW")
+  - Re-generated CtrlrHelper.xcodeproj via generate.sh
+
+[2026-02-18] - Phase 2: Mac Companion App (CtrlrHelper)
+  - New project: Ctrlr_MacHelper/ (macOS 13+, menu bar only, no Dock icon)
+  - ConnectionManager.swift: Bonjour browser auto-discovers "Ctrlr" on local
+    network, auto-connects via MIDINetworkSession — no user interaction needed
+  - CtrlrHelperApp.swift: MenuBarExtra with live status (green=connected,
+    dim=searching), Launch at Login toggle, Quit button
+  - Info.plist: LSUIElement=YES (hidden from Dock), Bonjour service keys
+  - generate.sh: XcodeGen wrapper to build the project
+  - User flow: install once → sits in menu bar → DAW sees MIDI ports automatically
+
+[2026-02-18] - Phase 1: WiFi MIDI Connection (Network MIDI)
+  - MIDIManager.swift: Added setupNetworkMIDI() — enables MIDINetworkSession on
+    launch, connectionPolicy = .anyone (auto-accept all DAW connections)
+  - Info.plist: Added NSLocalNetworkUsageDescription + NSBonjourServices keys
+    (_apple-midi._tcp + _apple-midi._udp) required for iOS 14+
+  - ContentView.swift: Added SetupGuideView — color-coded 4-step guide shown
+    when no MIDI devices found. Replaces empty state in DevicePickerView.
+
+[2026-02-17] - All icon sizes generated
+  - Generated 12 icon sizes (20-180px) from Ctrlr-AppIcon-1024.png using sips
+  - Updated Contents.json with all iPhone + iPad entries
+
+[2026-02-17] - Old name cleanup complete
+  - build.sh: TrkCtrl -> Ctrlr (PROJECT_NAME, SCHEME_NAME, PROJECT_FILE, echo)
+  - generate.sh: updated success message
+  - Ctrlr_XcodeGen/README.md: updated bundle ID, project name, Ableton path
+  - README.md: updated title and description
+  - CLAUDE.md: updated all paths, filenames, and folder references
+  - Renamed TrkCtrlApp.swift -> CtrlrApp.swift, struct TrkCtrlApp -> CtrlrApp
+
+[2026-02-17] - App Renamed: Signal -> Ctrlr
+  - Updated CFBundleName in Info.plist: Signal -> Ctrlr
+  - Updated bundle ID: com.sinaudio.Signal -> com.sinaudio.Ctrlr
+  - Updated project.yml: name + target = Ctrlr
+  - Updated project.pbxproj: target name, product name, bundle ID, app path
+  - Renamed Signal.xcodeproj -> Ctrlr.xcodeproj
+  - Updated MIDIManager.swift: SignalClient -> CtrlrClient, SignalOut -> CtrlrOut
+  - Updated autoSelectPreferred default: "Signal" -> "Ctrlr"
+  - Updated Documentation, Privacy Policy, App Store Description, CLAUDE.md
+
+[2026-01-12] - Error Handling & Auto-Reconnect Added
+  - Added MIDIConnectionError enum with localized descriptions
+  - Added ConnectionState enum (disconnected, connected, error)
+  - MIDI notifications for device connect/disconnect events
+  - Auto-reconnect to previously selected device
+  - Published lastError and connectionState for UI updates
+  - Updated ContentView to use selectDestination() method
+  - HeaderView now shows 3 states: CONNECTED (green), ERROR (yellow), DISCONNECTED (red)
+  - Error banner with dismiss button appears when lastError is set
+
+[2026-01-12] - Company Renamed: Nomaudio -> SinAudio
+  - Updated bundle ID: com.sinaudio.Signal
+  - Updated Privacy Policy, App Store Description
+  - Regenerated Xcode project
+
+[2026-01-12] - Code Cleanup for Production
+  - Removed 15 debug print() statements from ContentView.swift
+  - Cleaned up MIDIManager.swift testing section
+  - Updated MIDI client names: TrkCtrlClient -> SignalClient
+  - Added proper MARK comments for code organization
+  - Removed ping() test function
+
+[2026-01-12] - App Store Description Created
+  - Created /Documentation/APP_STORE_DESCRIPTION.md
+  - Includes: subtitle, short desc, long desc, keywords
+  - Keywords: MIDI, controller, DAW, Ableton, etc. (100 chars)
+  - Category: Music (primary), Utilities (secondary)
+  - Age Rating: 4+
+
+[2026-01-12] - Rebranding: TrkCtrl -> Signal, Company -> SinAudio
+  - Updated Info.plist: CFBundleName = Signal
+  - Updated project.yml: name, target, bundle ID
+  - New Bundle ID: com.sinaudio.Signal
+  - Updated Privacy Policy with new names
+  - NOTE: Folder still named "TrkCtrl App" (rename manually if desired)
+
+[2026-01-12] - Assets Requirements Added
+  - Added comprehensive ASSETS section to tracker
+  - App Icons: 13 sizes required for iOS
+  - Launch Screen requirements
+  - App Store screenshots (3 iPhone sizes minimum)
+  - Marketing assets (optional)
+  - Logo design marked as IN PROGRESS
+
+[2026-01-12] - Privacy Policy Created
+  - Created /Documentation/PRIVACY_POLICY.md
+  - Covers: no data collection, Bluetooth/Mic permissions explanation
+  - Needs: Host URL + add contact email before submission
+
+[2026-01-12] - Project Review
+  - Initial project tracker created
+  - Identified App Store requirements
+  - Documented current project state (~90% iOS app complete)
+
+[Previous]
+  - Ableton UserConfiguration.txt location:
+    /TrkCtrl_XcodeGen/AbletonUserRemoteScript_TrkCtrl/UserConfiguration.txt
+  - MIDI Mapping: Channel 1, Notes 60/62/64 for transport, CC 7/65/66
+
+--------------------------------------------------------------------------------
+                         CONFIGURATION LOCATIONS
+--------------------------------------------------------------------------------
+
+Ableton Remote Script:
+  Local:  /TrkCtrl_XcodeGen/AbletonUserRemoteScript_TrkCtrl/UserConfiguration.txt
+  Target: ~/Music/Ableton/User Library/Remote Scripts/UserConfiguration.txt
+  Status: Not yet deployed to Ableton directory
+
+App Configuration:
+  Info.plist: /TrkCtrl_XcodeGen/Sources/Info.plist
+  Project:    /TrkCtrl_XcodeGen/project.yml
+
+================================================================================
+                              TO-DO LIST
+================================================================================
+
+DEVELOPMENT TASKS
+-----------------
+[x] Remove debug print() statements from ContentView.swift - DONE
+[x] Implement device reconnection/auto-connect logic - DONE
+[x] Add error handling for MIDI connection failures - DONE
+[ ] Create unit tests for MIDIManager and AppModel
+[x] Clean up testing section in MIDIManager.swift - DONE
+
+ASSETS - APP ICONS (Required for iOS)
+-------------------------------------
+Location: /TrkCtrl_XcodeGen/Sources/Assets.xcassets/AppIcon.appiconset/
+
+[ ] Logo design finalized (IN PROGRESS)
+[x] App Icon 1024x1024 (App Store - REQUIRED) - DONE: Ctrlr-AppIcon-1024.png added
+[x] App Icon 180x180 (iPhone @3x) - DONE
+[x] App Icon 120x120 (iPhone @2x) - DONE
+[x] App Icon 167x167 (iPad Pro @2x) - DONE
+[x] App Icon 152x152 (iPad @2x) - DONE
+[x] App Icon 76x76 (iPad @1x) - DONE
+[x] App Icon 40x40 (Spotlight @2x) - DONE
+[x] App Icon 60x60 (Spotlight @3x) - DONE
+[x] App Icon 58x58 (Settings @2x) - DONE
+[x] App Icon 87x87 (Settings @3x) - DONE
+[x] App Icon 20x20 (Notification @1x) - DONE
+[x] App Icon 40x40 (Notification @2x) - DONE
+[x] App Icon 60x60 (Notification @3x) - DONE
+[x] Update Contents.json with all icon references - DONE
+
+ASSETS - LAUNCH SCREEN
+----------------------
+[ ] Launch Screen storyboard OR
+[ ] Launch Screen image set (multiple sizes)
+[ ] Matches app branding/logo
+
+ASSETS - APP STORE SCREENSHOTS (Required)
+-----------------------------------------
+[ ] iPhone 6.7" (1290 x 2796) - iPhone 15 Pro Max, 14 Pro Max
+[ ] iPhone 6.5" (1284 x 2778) - iPhone 14 Plus, 13 Pro Max, 12 Pro Max
+[ ] iPhone 5.5" (1242 x 2208) - iPhone 8 Plus (if supporting older devices)
+[ ] iPad Pro 12.9" (2048 x 2732) - if supporting iPad
+[ ] App Preview video (optional, 15-30 sec, recommended for DAW controller)
+
+ASSETS - MARKETING (Optional but Recommended)
+---------------------------------------------
+[ ] Promotional banner/artwork
+[ ] Social media assets
+[ ] Website header image
+
+DOCUMENTATION - REQUIRED FOR APP STORE
+--------------------------------------
+[x] Privacy Policy (URL required) - DONE: /Documentation/PRIVACY_POLICY.md
+[ ] Support URL/webpage
+[x] App Store Description (short + long) - DONE: /Documentation/APP_STORE_DESCRIPTION.md
+[x] Keywords (up to 100 characters) - DONE: included in APP_STORE_DESCRIPTION.md
+[ ] App Screenshots (6.7", 6.5", 5.5" iPhone)
+[x] App Icon 1024x1024 for App Store - DONE
+[x] Copyright information - DONE: © 2026 SinAudio
+[ ] Contact email for App Review
+
+DOCUMENTATION - USER GUIDES
+---------------------------
+[ ] Quick Start Guide
+[ ] Ableton Setup Instructions (UserConfiguration.txt install)
+[ ] MIDI Mapping Reference
+[ ] FAQ / Troubleshooting
+[ ] Release Notes v1.0
+
+APP STORE CONNECT
+-----------------
+[ ] Apple Developer Program membership ($99/year)
+[ ] App Store Connect account setup
+[ ] Register Bundle ID in Developer Portal
+[ ] Create app in App Store Connect
+[ ] Export Compliance declaration
+[ ] Age Rating questionnaire
+[ ] App Review test instructions
+[ ] Distribution certificate & provisioning profile
+[ ] Archive release build
+[ ] Submit for App Review
+
+DOCUMENTATION SITE (docs-site/)
+-------------------------------
+[ ] Write index.mdx content
+[ ] Add installation guide page
+[ ] Add MIDI reference page
+[ ] Fix build stability issues
+[ ] Deploy to hosting (Vercel/Netlify)
+
+================================================================================
+                           COMPLETED ITEMS
+================================================================================
+
+[x] Core iOS app UI (ContentView.swift)
+[x] MIDI communication (MIDIManager.swift)
+[x] App state management (AppModel.swift)
+[x] XcodeGen project setup
+[x] Ableton UserConfiguration.txt mapping
+[x] Documentation site skeleton (Next.js/Nextra)
+[x] Git repository initialized
+[x] Basic README files
+
+================================================================================
+                         TROUBLESHOOTING LOG
+================================================================================
+
+Problems diagnosed and resolved — reference before debugging similar issues.
+
+[SOLVED] ARM/LOOP require double press to toggle (Session 5)
+  SYMPTOM:  ARM and LOOP buttons need two taps to activate/deactivate in Ableton.
+  CAUSE:    Local toggle state sent alternating CC values (127 on first press, 0 on
+            second). Ableton's ButtonElement(is_momentary=True) only fires on values
+            >= 64. So every other press (CC 0) was treated as a "release" and ignored.
+  FIX:      Send momentary pulse (CC 127 immediately followed by CC 0) on every press.
+            Ableton handles the toggle internally. Local armOn/loopOn state is cosmetic.
+  FILES:    ContentView.swift (ArmLoopSection)
+
+[SOLVED] Nothing is MIDI-learnable / mappable in Ableton (Session 5)
+  SYMPTOM:  Macro buttons (notes 68-82) cannot be MIDI-learned in Ableton.
+  CAUSE:    Ableton's control surface script claims the "Ctrlr" MIDI port exclusively.
+            Once a port is claimed by a script, Ableton disables MIDI Learn on it —
+            even for notes/CCs the script doesn't use.
+  FIX:      Added second virtual MIDI port "Ctrlr Map" on the Mac helper. All MIDI
+            routed to both ports. User enables Remote on "Ctrlr Map" in Ableton's
+            MIDI prefs. Script keeps "Ctrlr" for transport. MIDI Learn uses "Ctrlr Map".
+  FILES:    ConnectionManager.swift (setupVirtualMIDI, route, deinit)
+
+[SOLVED] UserConfiguration.txt had wrong InputName (Session 5)
+  SYMPTOM:  Remote script may not bind to correct MIDI port.
+  CAUSE:    InputName was still "TrkCtrl Input" from the old app name. Renamed to "Ctrlr".
+  NOTE:     The Python script's suggest_input_port() returning "Ctrlr" takes precedence
+            when the _Framework script is present, but both should match.
+  FILES:    UserConfiguration.txt
+
+[SOLVED] TCP connection race condition — stale .cancelled handler (Session 4)
+  SYMPTOM:  Mac companion connects then immediately shows disconnected.
+  CAUSE:    Old connection's .cancelled state handler nulled out macConnection after it
+            was already replaced by a new connection.
+  FIX:      Used [weak connection] capture + identity check (self.macConnection === connection)
+            in state handler to ignore stale callbacks.
+  FILES:    MIDIManager.swift (acceptMacConnection)
+
+[SOLVED] Double-browse race condition in reconnect (Session 4)
+  SYMPTOM:  Multiple NWBrowser instances running simultaneously, causing duplicate
+            connection attempts.
+  CAUSE:    reconnect() called startBrowsing() directly AND the .cancelled handler also
+            called startBrowsing().
+  FIX:      Only .cancelled handler calls startBrowsing(). reconnect() just cancels.
+  FILES:    ConnectionManager.swift (reconnect)
+
+[SOLVED] NWBrowser discovering stale Simulator Bonjour records (Session 4)
+  SYMPTOM:  Mac connects to itself instead of the phone. Handshake times out.
+  CAUSE:    Simulator leaves stale _ctrlr._tcp records that resolve to localhost.
+  FIX:      Added self-host filter (compares resolved hostname to Mac's own hostname),
+            rejected endpoints set, 5-second handshake timeout with blocklist.
+  FILES:    ConnectionManager.swift (selfHost, rejectedEndpoints, setupConnection)
+
+================================================================================
+                              NOTES
+================================================================================
+
+MIDI Channel: 1
+Transport Notes: Play=60(C4), Stop=62(D4), Record=64(E4)
+CC Messages: Volume=7, TrackArm=65, Loop=66
+Macro Notes: 68-82 (MIDI-learnable via "Ctrlr Map" port)
+MMC Commands: Stop=0x01, Play=0x02, FF=0x04, RWD=0x05, Record=0x06, Pause=0x09
+
+Dual MIDI Ports (Mac Helper):
+  "Ctrlr"     — claimed by Ableton remote script (transport/mixer auto-assigned)
+  "Ctrlr Map" — enable Remote in Ableton prefs for MIDI Learn
+
+Testing requires physical iPhone device (MIDI not available in Simulator)
+
+================================================================================
