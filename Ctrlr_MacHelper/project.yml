@@ -1,0 +1,17 @@
+name: CtrlrHelper
+options:
+  minimumXcodeGenVersion: 2.37.0
+
+targets:
+  CtrlrHelper:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.sinaudio.CtrlrHelper
+      INFOPLIST_FILE: Sources/Info.plist
+      CODE_SIGN_ENTITLEMENTS: Sources/CtrlrHelper.entitlements
+    sources:
+      - path: Sources
+    scheme:
+      testTargets: []

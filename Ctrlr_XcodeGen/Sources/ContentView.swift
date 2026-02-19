@@ -905,38 +905,8 @@ struct DevicePickerView: View {
 
                 VStack(spacing: 0) {
                     if midi.destinations.isEmpty {
-                        // No devices found
-                        VStack(spacing: 16) {
-                            Image(systemName: "airpodspro")
-                                .font(.system(size: 60))
-                                .foregroundColor(Color(hex: "#444444"))
-
-                            Text("No MIDI Devices Found")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white)
-
-                            Text("Make sure your MIDI device is connected\nand turned on")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "#888888"))
-                                .multilineTextAlignment(.center)
-
-                            Button(action: {
-                                midi.refreshDestinations()
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "arrow.clockwise")
-                                    Text("Refresh")
-                                        .font(.system(size: 14, weight: .semibold))
-                                }
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 10)
-                                .background(Color(hex: "#ff6b35"))
-                                .cornerRadius(8)
-                            }
-                            .padding(.top, 8)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        SetupGuideView(midi: midi)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         // Device list
                         List {
@@ -954,6 +924,60 @@ struct DevicePickerView: View {
                         }
                         .scrollContentBackground(.hidden)
                     }
+
+                    // Debug footer
+                    VStack(spacing: 10) {
+                        Divider()
+
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("\(midi.destinations.count) DESTINATIONS FOUND")
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .tracking(1)
+                                    .foregroundColor(Color(hex: "#444444"))
+                                if let name = midi.selectedDestination.map({ midi.name(for: $0) }) {
+                                    Text("→ \(name)")
+                                        .font(.system(size: 9, design: .monospaced))
+                                        .foregroundColor(Color(hex: "#00ff88"))
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                }
+                                Text("TCP: \(midi.listenerDebug)")
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#666666"))
+                                Text("MAC: \(midi.companionDebug)")
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#666666"))
+                                Text("incoming: \(midi.incomingCount)")
+                                    .font(.system(size: 9, design: .monospaced))
+                                    .foregroundColor(Color(hex: "#666666"))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+
+                        Button(action: { midi.reconnect() }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 14, weight: .semibold))
+                                Text("RECONNECT")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .tracking(2)
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color(hex: "#00d4ff").opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color(hex: "#00d4ff").opacity(0.4), lineWidth: 1)
+                            )
+                            .cornerRadius(10)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
+                    }
+                    .background(Color(hex: "#0c0c0c"))
                 }
             }
             .navigationTitle("MIDI Devices")
@@ -1010,6 +1034,127 @@ struct DeviceRow: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// =========================================================================
+// MARK: - Setup Guide: Step-by-step WiFi MIDI connection instructions
+// =========================================================================
+// Shown in DevicePickerView when no MIDI destinations are found.
+// Guides the user through the one-time Audio MIDI Setup step on Mac.
+// =========================================================================
+
+struct SetupGuideView: View {
+    @ObservedObject var midi: MIDIManager
+
+    private struct Step {
+        let number: Int
+        let title: String
+        let detail: String
+        let color: String
+    }
+
+    private let steps: [Step] = [
+        Step(number: 1, title: "Same WiFi",        detail: "Connect your iPhone and Mac to the same WiFi network.",                                      color: "#00d4ff"),
+        Step(number: 2, title: "Audio MIDI Setup", detail: "On your Mac, open:\nApplications → Utilities → Audio MIDI Setup",                            color: "#ff6b35"),
+        Step(number: 3, title: "MIDI Studio",      detail: "Go to Window → Show MIDI Studio.\nClick the Network icon in the toolbar.",                   color: "#ffcc00"),
+        Step(number: 4, title: "Connect",          detail: "Find \"Ctrlr\" in the Directory list on the left.\nClick Connect — you're done.",             color: "#00ff88"),
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+
+                // Header
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "wifi")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(hex: "#00d4ff"))
+                        Text("WIFI MIDI")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(2)
+                            .foregroundColor(Color(hex: "#00d4ff"))
+                        Text("RECOMMENDED")
+                            .font(.system(size: 8, weight: .bold))
+                            .tracking(1.5)
+                            .foregroundColor(Color(hex: "#00d4ff").opacity(0.5))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(hex: "#00d4ff").opacity(0.1))
+                            .cornerRadius(3)
+                    }
+                    Text("One-time setup on your Mac. Reconnects automatically.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(hex: "#666666"))
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
+                .padding(.bottom, 20)
+
+                // Steps
+                VStack(spacing: 0) {
+                    ForEach(steps, id: \.number) { step in
+                        HStack(alignment: .top, spacing: 14) {
+                            // Numbered circle
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: step.color).opacity(0.15))
+                                    .frame(width: 32, height: 32)
+                                Text("\(step.number)")
+                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                                    .foregroundColor(Color(hex: step.color))
+                            }
+
+                            // Step content
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(step.title)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text(step.detail)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color(hex: "#888888"))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.bottom, 20)
+
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                }
+
+                // Advertising status
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color(hex: "#00ff88"))
+                        .frame(width: 6, height: 6)
+                        .shadow(color: Color(hex: "#00ff88"), radius: 6)
+                    Text("Advertising as \"Ctrlr\" on your network")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#555555"))
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+
+                // Refresh button
+                Button(action: { midi.refreshDestinations() }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("REFRESH DEVICES")
+                            .tracking(1)
+                    }
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color(hex: "#ff6b35"))
+                    .cornerRadius(10)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 32)
+            }
+        }
     }
 }
 

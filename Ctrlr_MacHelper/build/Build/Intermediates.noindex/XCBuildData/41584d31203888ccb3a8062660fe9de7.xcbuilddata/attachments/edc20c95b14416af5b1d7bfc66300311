@@ -1,0 +1,29 @@
+{
+  "" : {
+    "diagnostics" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelper-primary.dia",
+    "emit-module-dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelper-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelper-primary-emit-module.dia",
+    "pch" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelper-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelper-primary.swiftdeps"
+  },
+  "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/Sources/ConnectionManager.swift" : {
+    "const-values" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.swiftconstvalues",
+    "dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.d",
+    "diagnostics" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.dia",
+    "index-unit-output-path" : "/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.o",
+    "llvm-bc" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.bc",
+    "object" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.o",
+    "swift-dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager.swiftdeps",
+    "swiftmodule" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/ConnectionManager~partial.swiftmodule"
+  },
+  "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/Sources/CtrlrHelperApp.swift" : {
+    "const-values" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.swiftconstvalues",
+    "dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.d",
+    "diagnostics" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.dia",
+    "index-unit-output-path" : "/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.o",
+    "llvm-bc" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.bc",
+    "object" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.o",
+    "swift-dependencies" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp.swiftdeps",
+    "swiftmodule" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/CtrlrHelper.build/Debug/CtrlrHelper.build/Objects-normal/arm64/CtrlrHelperApp~partial.swiftmodule"
+  }
+}

@@ -13,4 +13,10 @@
     <key>NSMicrophoneUsageDescription</key><string>This app needs microphone access for MIDI communication with music software.</string>
     <key>NSBluetoothAlwaysUsageDescription</key><string>This app uses Bluetooth for MIDI communication with music software.</string>
     <key>NSBluetoothPeripheralUsageDescription</key><string>This app uses Bluetooth for MIDI communication with music software.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>Ctrlr uses your local network to connect to your DAW over WiFi MIDI.</string>
+    <key>NSBonjourServices</key><array>
+        <string>_ctrlr._tcp</string>
+        <string>_apple-midi._tcp</string>
+        <string>_apple-midi._udp</string>
+    </array>
     <key>UILaunchScreen</key><dict/></dict></plist>

@@ -1,0 +1,64 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "2c76903702b0fe0e388c4b9e4891445b78d84c747c2d977ee40015ee8aa196dd"
+    }
+  ],
+  "containerPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/CtrlrHelper.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "platform" : "macosx",
+      "sdk" : "macosx26.2",
+      "sdkVariant" : "macos",
+      "supportedArchitectures" : [
+        "arm64e",
+        "arm64",
+        "x86_64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Products",
+      "derivedDataPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build",
+      "indexDataStoreFolderPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/wesleyodd/Development/Ctrlr App/Ctrlr_MacHelper/build/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
+          "TOOLCHAINS" : "com.apple.dt.toolchain.Metal.32023 $(inherited)"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}
