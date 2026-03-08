@@ -899,22 +899,31 @@ struct TransportRecordButton: View {
 
 struct ConsoleBranding: View {
     var body: some View {
-        HStack(spacing: 10) {
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
 
-            Text("CTRLR")
-                .font(.custom("DigitalDismay", size: 25))
-                .tracking(8)
-                .foregroundColor(Color.white.opacity(0.250))
-                .fixedSize()
-                .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
-                .padding(.horizontal, 60)
+                Text("CTRLR")
+                    .font(.custom("DigitalDismay", size: 25))
+                    .tracking(8)
+                    .foregroundColor(Color.white.opacity(0.250))
+                    .fixedSize()
+                    .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
+                    .padding(.horizontal, 60)
 
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
+            }
+
+            Image("SinAudioLogo")
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 140)
+                .foregroundColor(Color.white.opacity(0.9))
         }
         .padding(.horizontal, 26)
         .padding(.top, 10)
