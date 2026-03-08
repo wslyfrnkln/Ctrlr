@@ -1,7 +1,7 @@
 # Ctrlr
 
-**Last Updated:** 2026-03-02
-**Status:** active
+**Last Updated:** 2026-03-08
+**Status:** active — PR #1 open (feature/ble-midi-handshake → main)
 **Type:** iOS App
 **Version:** 1.0 (Build 1)
 **Bundle ID:** com.sinaudio.Ctrlr
@@ -43,6 +43,24 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 - [x] Privacy Policy
 - [x] App Store Description + Keywords
 - [x] Copyright: © 2026 SinAudio
+
+### Phase 1b — Stability + BLE MIDI (feature/ble-midi-handshake, PR #1)
+**Goal:** WiFi reliability + Bluetooth MIDI support
+
+- [x] UIBackgroundModes: bluetooth-central (connections survive backgrounding)
+- [x] TCP auto-reconnect — 5s listener restart fallback on companion drop
+- [x] UserDefaults device persistence — auto-select on relaunch
+- [x] Safe `takeRetainedValue()` guard in `name(for:)`
+- [x] Fail-fast dual-absent error in `sendPacket()`
+- [x] `.msgPropertyChanged` in CoreMIDI notification handler
+- [x] Transport button accessibility (PLAY/STOP/REC labels + traits)
+- [x] Fader haptic feedback (every 5 MIDI steps)
+- [x] Mac Helper: dns-sd retry cap (5 attempts), SMAppService sync, onChange compat
+- [x] `BluetoothMIDIView` — `CABTMIDICentralViewController` wrapper + simulator guard
+- [x] `CBCentralManager` state restoration + auto-reconnect (UUID persisted to UserDefaults)
+- [x] BLE endpoint detection via `kMIDIPropertyDriverOwner`
+- [x] BLE UI — button in device picker, header indicator, diagnostic row
+- [ ] Device QA — physical iPhone BLE MIDI validation
 
 ### Phase 2 — QA & Testing
 **Goal:** Validate all MIDI functionality on physical hardware
@@ -95,6 +113,7 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 | `MIDIManager.swift` | CoreMIDI communication layer |
 | `ContentView.swift` | All UI components (~1000 lines) |
 | `ConnectionManager.swift` | Bonjour browser, dual MIDI ports |
+| `BluetoothMIDIView.swift` | CABTMIDICentralViewController SwiftUI wrapper |
 | `ScriptInstaller.swift` | Ableton remote script installer |
 | `LaunchScreenView.swift` | SwiftUI launch screen (1.2s + 0.4s fade) |
 
@@ -163,6 +182,8 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 
 | Date | Change |
 |------|--------|
+| 2026-03-08 | Phase 1b: WiFi stability fixes + full BLE MIDI support (PR #1) |
+| 2026-03-08 | Mac Helper: dns-sd retry cap, SMAppService sync, onChange compat |
 | 2026-03-02 | Standardized to PROJECT.md template |
 | 2026-02-26 | Refactored to PROJECT.md |
 | 2026-02-20 | Launch screen (LaunchScreenView.swift + CtrlrApp.swift), SinAudio logo |
@@ -182,6 +203,7 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 
 | Date | Model | Task | Est. Tokens |
 |------|-------|------|-------------|
+| 2026-03-08 | claude-sonnet-4-6 | Phase 1b — WiFi stability + BLE MIDI (Track A + B) | ~25,000 |
 | 2026-03-02 | claude-sonnet-4-6 | PROJECT.md template standardization | ~400 |
 | 2026-02-26 | claude-sonnet-4-6 | PROJECT.md refactor | ~300 |
 | 2026-02-20 | claude-sonnet-4-6 | Launch screen | ~2,000 |
