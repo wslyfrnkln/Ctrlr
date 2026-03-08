@@ -1,5 +1,6 @@
 import Foundation
 import CoreMIDI
+import CoreBluetooth
 import Network
 
 // MARK: - MIDI Error Types
@@ -24,7 +25,7 @@ enum MIDIConnectionError: Error, LocalizedError {
 
 // MARK: - MIDI Manager
 
-final class MIDIManager: ObservableObject {
+final class MIDIManager: NSObject, ObservableObject {
     private var client = MIDIClientRef()
     private var outPort = MIDIPortRef()
 
@@ -34,19 +35,45 @@ final class MIDIManager: ObservableObject {
     @Published var connectionState: ConnectionState = .disconnected
     @Published var companionConnected = false
 
+    // BLE MIDI state
+    @Published var bleConnected: Bool = false
+    @Published var blePeripheralName: String? = nil
+
     private var lastSelectedDeviceName: String?
 
     // TCP server — Mac companion connects to us
     private var midiListener: NWListener?
     private var macConnection: NWConnection?
 
+    // BLE — CBCentralManager for state restoration + auto-reconnect only.
+    // Discovery/pairing is handled by CABTMIDICentralViewController in the UI.
+    // CoreMIDI handles all data transfer after pairing.
+    private var centralManager: CBCentralManager!
+    private let bleQueue = DispatchQueue(label: "com.sinaudio.ctrlr.ble", qos: .userInitiated)
+    private var knownPeripheral: CBPeripheral?   // strong ref required for reconnect
+    private var bleResetting = false
+    private var bleEndpoints: Set<MIDIEndpointRef> = []
+    private static let blePeripheralUUIDKey = "ctrlr_lastBLEPeripheralUUID"
+    private static let midiServiceUUID = CBUUID(string: "03B80E5A-EDE8-4B33-A751-6CE34EC4C700")
+
     enum ConnectionState {
         case disconnected, connected, error
     }
 
-    init() {
+    override init() {
+        super.init()
         // Restore previously selected device name before refreshDestinations runs
         lastSelectedDeviceName = UserDefaults.standard.string(forKey: "ctrlr_lastMIDIDevice")
+        // Initialize CBCentralManager before setupMIDI so it's ready when CoreMIDI
+        // notifications start firing. The restore identifier enables iOS state restoration.
+        centralManager = CBCentralManager(
+            delegate: self,
+            queue: bleQueue,
+            options: [
+                CBCentralManagerOptionRestoreIdentifierKey: "ctrlr-midi-central",
+                CBCentralManagerOptionShowPowerAlertKey: true
+            ]
+        )
         setupMIDI()       // calls refreshDestinations → attemptReconnect uses restored name
         startMIDIServer()
     }
@@ -219,10 +246,48 @@ final class MIDIManager: ObservableObject {
             switch notification.pointee.messageID {
             case .msgSetupChanged, .msgObjectAdded, .msgObjectRemoved, .msgPropertyChanged:
                 self.refreshDestinations(); self.attemptReconnect()
+                self.updateBLEEndpoints()
             default:
                 self.refreshDestinations()
             }
         }
+    }
+
+    /// Scan current destinations for BLE MIDI endpoints (identified by driver owner).
+    /// Updates bleConnected and bleEndpoints. Called after any CoreMIDI topology change.
+    private func updateBLEEndpoints() {
+        var currentBLEEndpoints = Set<MIDIEndpointRef>()
+        for endpoint in destinations {
+            var param: Unmanaged<CFString>?
+            let status = MIDIObjectGetStringProperty(endpoint, kMIDIPropertyDriverOwner, &param)
+            if status == noErr, let unmanaged = param {
+                let driver = unmanaged.takeRetainedValue() as String
+                if driver == "com.apple.AppleMIDIBluetoothDriver" {
+                    currentBLEEndpoints.insert(endpoint)
+                    // Capture display name if not already set
+                    if blePeripheralName == nil {
+                        blePeripheralName = name(for: endpoint)
+                    }
+                }
+            }
+        }
+
+        let appeared = currentBLEEndpoints.subtracting(bleEndpoints)
+        let disappeared = bleEndpoints.subtracting(currentBLEEndpoints)
+
+        if !appeared.isEmpty {
+            bleConnected = true
+            // Fallback: if no UUID stored yet, try to register now
+            if UserDefaults.standard.string(forKey: Self.blePeripheralUUIDKey) == nil {
+                registerBLEPeripheral()
+            }
+        }
+        if !disappeared.isEmpty && currentBLEEndpoints.isEmpty {
+            bleConnected = false
+            blePeripheralName = nil
+        }
+
+        bleEndpoints = currentBLEEndpoints
     }
 
     // MARK: - Helpers
@@ -236,7 +301,7 @@ final class MIDIManager: ObservableObject {
 
     var selectedDestinationName: String { selectedDestination.map { name(for: $0) } ?? "None" }
 
-    var isConnected: Bool { companionConnected || (selectedDestination != nil && connectionState == .connected) }
+    var isConnected: Bool { companionConnected || bleConnected || (selectedDestination != nil && connectionState == .connected) }
 
     var diagnosticText: String {
         """
@@ -244,6 +309,7 @@ final class MIDIManager: ObservableObject {
         SVC: \(serviceDebug)
         MAC: \(companionDebug)
         IP:  \(localIP)
+        BLE: \(bleConnected ? (blePeripheralName ?? "connected") : "off")
         IN:  \(incomingCount)
         DST: \(destinations.count)
         SEL: \(selectedDestinationName)
@@ -270,6 +336,62 @@ final class MIDIManager: ObservableObject {
         refreshDestinations()
         attemptReconnect()
         restartServer()
+    }
+
+    // MARK: - BLE Reconnect
+
+    /// Attempt to reconnect to the last known BLE MIDI peripheral.
+    /// Must be called only after CBCentralManager reaches .poweredOn.
+    /// Safe to call from any thread — dispatches to bleQueue internally.
+    func attemptReconnectBLE() {
+        bleQueue.async { [weak self] in
+            guard let self, self.centralManager.state == .poweredOn else { return }
+
+            // Try stored UUID first (fastest path — no scan required)
+            if let uuidString = UserDefaults.standard.string(forKey: Self.blePeripheralUUIDKey),
+               let uuid = UUID(uuidString: uuidString) {
+                let known = self.centralManager.retrievePeripherals(withIdentifiers: [uuid])
+                if let peripheral = known.first {
+                    self.knownPeripheral = peripheral
+                    self.centralManager.connect(peripheral, options: nil)
+                    return
+                }
+            }
+
+            // Fallback: find any currently connected BLE MIDI peripheral
+            let connected = self.centralManager.retrieveConnectedPeripherals(withServices: [Self.midiServiceUUID])
+            if let peripheral = connected.first {
+                self.knownPeripheral = peripheral
+                let uuidString = peripheral.identifier.uuidString
+                UserDefaults.standard.set(uuidString, forKey: Self.blePeripheralUUIDKey)
+                self.centralManager.connect(peripheral, options: nil)
+            }
+        }
+    }
+
+    /// Call after CABTMIDICentralViewController sheet dismisses.
+    /// Finds the newly-paired BLE MIDI peripheral, persists its UUID,
+    /// and refreshes CoreMIDI destinations to pick up the new endpoint.
+    func registerBLEPeripheral() {
+        bleQueue.async { [weak self] in
+            guard let self, self.centralManager.state == .poweredOn else { return }
+            let connected = self.centralManager.retrieveConnectedPeripherals(withServices: [Self.midiServiceUUID])
+            guard let peripheral = connected.first else { return }
+
+            self.knownPeripheral = peripheral
+            let uuidString = peripheral.identifier.uuidString
+            // Capture name (Sendable String) before crossing to main queue
+            let peripheralName = peripheral.name
+
+            UserDefaults.standard.set(uuidString, forKey: Self.blePeripheralUUIDKey)
+            self.centralManager.connect(peripheral, options: nil)  // ensure CBCentralManager tracks it
+
+            DispatchQueue.main.async {
+                if let name = peripheralName { self.blePeripheralName = name }
+                self.refreshDestinations()
+                self.attemptReconnect()
+            }
+        }
     }
 
     // MARK: - Destinations
@@ -336,4 +458,65 @@ final class MIDIManager: ObservableObject {
     func sendMMC(command: UInt8)                                             { sendPacket([0xF0, 0x7F, 0x7F, 0x06, command, 0xF7]) }
 
     func clearError() { lastError = nil; if selectedDestination != nil { connectionState = .connected } }
+}
+
+// MARK: - CBCentralManagerDelegate
+// CBCentralManager is used ONLY for state restoration and auto-reconnect.
+// Scanning and data transfer are NOT used here — CoreMIDI handles both
+// after CABTMIDICentralViewController completes pairing.
+
+extension MIDIManager: CBCentralManagerDelegate {
+
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        // All delegate methods run on bleQueue — dispatch @Published mutations to main
+        switch central.state {
+        case .poweredOn:
+            bleResetting = false
+            attemptReconnectBLE()
+        case .resetting:
+            bleResetting = true
+            DispatchQueue.main.async { self.bleConnected = false }
+        case .poweredOff, .unauthorized, .unsupported:
+            DispatchQueue.main.async {
+                self.bleConnected = false
+                self.blePeripheralName = nil
+            }
+        default:
+            break
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
+        // Called on app relaunch via state restoration — re-issue connect() for restored peripherals
+        let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? []
+        for peripheral in restored {
+            knownPeripheral = peripheral
+            central.connect(peripheral, options: nil)
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        // BLE link is up — CoreMIDI will register the endpoint shortly.
+        // updateBLEEndpoints() (called from handleMIDINotification) sets the authoritative MIDI-ready state.
+        // Capture Sendable values before crossing to main.
+        let name = peripheral.name
+        DispatchQueue.main.async {
+            self.bleConnected = true
+            if let name { self.blePeripheralName = name }
+        }
+    }
+
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        // Immediately re-issue connect() — CoreBluetooth retries indefinitely in background.
+        // bluetooth-central background mode keeps this alive after app suspend.
+        knownPeripheral = peripheral
+        central.connect(peripheral, options: nil)
+        DispatchQueue.main.async { self.bleConnected = false }
+    }
+
+    func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        // Retry on failure — same persistent pattern as didDisconnect
+        central.connect(peripheral, options: nil)
+        DispatchQueue.main.async { self.bleConnected = false }
+    }
 }
