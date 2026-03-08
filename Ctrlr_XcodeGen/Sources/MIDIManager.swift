@@ -45,7 +45,9 @@ final class MIDIManager: ObservableObject {
     }
 
     init() {
-        setupMIDI()
+        // Restore previously selected device name before refreshDestinations runs
+        lastSelectedDeviceName = UserDefaults.standard.string(forKey: "ctrlr_lastMIDIDevice")
+        setupMIDI()       // calls refreshDestinations → attemptReconnect uses restored name
         startMIDIServer()
     }
 
@@ -183,6 +185,14 @@ final class MIDIManager: ObservableObject {
                         self.companionConnected = false
                         self.macConnection = nil
                         if self.selectedDestination == nil { self.connectionState = .disconnected }
+                        // Surface reconnecting state and schedule listener restart as fallback.
+                        // The Mac companion will retry outbound — the running NWListener will accept it.
+                        // If no new connection arrives within 5 seconds, restart the listener.
+                        self.companionDebug = "mac: reconnecting…"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                            guard let self, !self.companionConnected else { return }
+                            self.restartServer()
+                        }
                     }
                     self.companionDebug = "mac: failed \(e)"
                 case .cancelled:
@@ -207,7 +217,7 @@ final class MIDIManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             switch notification.pointee.messageID {
-            case .msgSetupChanged, .msgObjectAdded, .msgObjectRemoved:
+            case .msgSetupChanged, .msgObjectAdded, .msgObjectRemoved, .msgPropertyChanged:
                 self.refreshDestinations(); self.attemptReconnect()
             default:
                 self.refreshDestinations()
@@ -219,10 +229,9 @@ final class MIDIManager: ObservableObject {
 
     func name(for endpoint: MIDIEndpointRef) -> String {
         var param: Unmanaged<CFString>?
-        var name = "MIDI Dest"
-        if MIDIObjectGetStringProperty(endpoint, kMIDIPropertyDisplayName, &param) == noErr,
-           let s = param?.takeRetainedValue() { name = s as String }
-        return name
+        let status = MIDIObjectGetStringProperty(endpoint, kMIDIPropertyDisplayName, &param)
+        guard status == noErr, let unmanaged = param else { return "MIDI Dest" }
+        return unmanaged.takeRetainedValue() as String
     }
 
     var selectedDestinationName: String { selectedDestination.map { name(for: $0) } ?? "None" }
@@ -281,6 +290,7 @@ final class MIDIManager: ObservableObject {
     func selectDestination(_ destination: MIDIEndpointRef) {
         selectedDestination = destination
         lastSelectedDeviceName = name(for: destination)
+        UserDefaults.standard.set(lastSelectedDeviceName, forKey: "ctrlr_lastMIDIDevice")
         connectionState = .connected; lastError = nil
     }
 
@@ -288,6 +298,13 @@ final class MIDIManager: ObservableObject {
 
     private func sendPacket(_ data: [UInt8]) {
         guard !data.isEmpty else { return }
+
+        // Fail fast: if neither path is available, surface error immediately
+        if macConnection == nil && selectedDestination == nil {
+            lastError = .noDestinationSelected
+            connectionState = .disconnected
+            return
+        }
 
         // Send to Mac companion via TCP (length-prefixed)
         if let conn = macConnection {

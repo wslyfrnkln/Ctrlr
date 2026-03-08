@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMIDI
+import UIKit
 
 // =========================================================================
 // MARK: - Main View (Redesigned from launchpad-v4-iphone17.jsx)
@@ -327,6 +328,7 @@ struct SSLFaderView: View {
     @ObservedObject var midi: MIDIManager
     @ObservedObject var model: AppModel
     @State private var isDragging = false
+    @State private var lastHapticStep: Int = -1
 
     var body: some View {
         VStack(spacing: 8) {
@@ -368,9 +370,16 @@ struct SSLFaderView: View {
                             value = min(max(newValue, 0), 1)
                             // Send MIDI CC in real-time
                             midi.sendCC(cc: model.ccFader, value: model.ccScaledValue())
+                            // Haptic feedback every 5 MIDI steps (~25 ticks across full range)
+                            let currentStep = Int(value * 127)
+                            if currentStep / 5 != lastHapticStep / 5 {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                lastHapticStep = currentStep
+                            }
                         }
                         .onEnded { _ in
                             isDragging = false
+                            lastHapticStep = -1
                         }
                 )
             }
@@ -792,6 +801,9 @@ struct TransportStopButton: View {
             .shadow(color: isStopped ? Color(hex: "#ffcc00").opacity(0.4) : .black.opacity(0.4), radius: isStopped ? 15 : 6, y: 4)
         }
         .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
+        .accessibilityLabel("Stop")
+        .accessibilityHint("Stops playback")
+        .accessibilityAddTraits(isStopped ? .isSelected : [])
     }
 }
 
@@ -846,6 +858,9 @@ struct TransportPlayButton: View {
             .cornerRadius(10)
             .shadow(color: isPlaying ? Color(hex: "#00ff88").opacity(0.5) : .black.opacity(0.4), radius: isPlaying ? 17 : 8, y: 6)
         }
+        .accessibilityLabel("Play")
+        .accessibilityHint("Starts playback")
+        .accessibilityAddTraits(isPlaying ? .isSelected : [])
     }
 }
 
@@ -887,6 +902,9 @@ struct TransportRecordButton: View {
             .cornerRadius(10)
             .shadow(color: isRecording ? Color(hex: "#ff3b30").opacity(0.5) : .black.opacity(0.4), radius: isRecording ? 17 : 8, y: 6)
         }
+        .accessibilityLabel("Record")
+        .accessibilityHint("Toggles recording")
+        .accessibilityAddTraits(isRecording ? .isSelected : [])
     }
 }
 
