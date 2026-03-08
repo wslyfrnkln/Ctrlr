@@ -22,4 +22,7 @@
     <key>UIAppFonts</key><array>
         <string>Digital Dismay.otf</string>
     </array>
+    <key>UIBackgroundModes</key><array>
+        <string>bluetooth-central</string>
+    </array>
     <key>UILaunchScreen</key><dict/></dict></plist>

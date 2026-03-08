@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreMIDI
+import UIKit
 
 // =========================================================================
 // MARK: - Main View (Redesigned from launchpad-v4-iphone17.jsx)
@@ -150,6 +151,13 @@ struct HeaderView: View {
                         .font(.system(size: 10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#555555"))
+
+                    // BLE indicator — visible when a Bluetooth MIDI device is connected
+                    if midi.bleConnected {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(Color(hex: "#0A84FF"))
+                    }
                 }
 
                 Spacer()
@@ -327,6 +335,7 @@ struct SSLFaderView: View {
     @ObservedObject var midi: MIDIManager
     @ObservedObject var model: AppModel
     @State private var isDragging = false
+    @State private var lastHapticStep: Int = -1
 
     var body: some View {
         VStack(spacing: 8) {
@@ -368,9 +377,16 @@ struct SSLFaderView: View {
                             value = min(max(newValue, 0), 1)
                             // Send MIDI CC in real-time
                             midi.sendCC(cc: model.ccFader, value: model.ccScaledValue())
+                            // Haptic feedback every 5 MIDI steps (~25 ticks across full range)
+                            let currentStep = Int(value * 127)
+                            if currentStep / 5 != lastHapticStep / 5 {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                lastHapticStep = currentStep
+                            }
                         }
                         .onEnded { _ in
                             isDragging = false
+                            lastHapticStep = -1
                         }
                 )
             }
@@ -792,6 +808,9 @@ struct TransportStopButton: View {
             .shadow(color: isStopped ? Color(hex: "#ffcc00").opacity(0.4) : .black.opacity(0.4), radius: isStopped ? 15 : 6, y: 4)
         }
         .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
+        .accessibilityLabel("Stop")
+        .accessibilityHint("Stops playback")
+        .accessibilityAddTraits(isStopped ? .isSelected : [])
     }
 }
 
@@ -846,6 +865,9 @@ struct TransportPlayButton: View {
             .cornerRadius(10)
             .shadow(color: isPlaying ? Color(hex: "#00ff88").opacity(0.5) : .black.opacity(0.4), radius: isPlaying ? 17 : 8, y: 6)
         }
+        .accessibilityLabel("Play")
+        .accessibilityHint("Starts playback")
+        .accessibilityAddTraits(isPlaying ? .isSelected : [])
     }
 }
 
@@ -887,6 +909,9 @@ struct TransportRecordButton: View {
             .cornerRadius(10)
             .shadow(color: isRecording ? Color(hex: "#ff3b30").opacity(0.5) : .black.opacity(0.4), radius: isRecording ? 17 : 8, y: 6)
         }
+        .accessibilityLabel("Record")
+        .accessibilityHint("Toggles recording")
+        .accessibilityAddTraits(isRecording ? .isSelected : [])
     }
 }
 
@@ -899,22 +924,31 @@ struct TransportRecordButton: View {
 
 struct ConsoleBranding: View {
     var body: some View {
-        HStack(spacing: 10) {
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
 
-            Text("CTRLR")
-                .font(.custom("DigitalDismay", size: 25))
-                .tracking(8)
-                .foregroundColor(Color.white.opacity(0.250))
-                .fixedSize()
-                .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
-                .padding(.horizontal, 60)
+                Text("CTRLR")
+                    .font(.custom("DigitalDismay", size: 25))
+                    .tracking(8)
+                    .foregroundColor(Color.white.opacity(0.250))
+                    .fixedSize()
+                    .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
+                    .padding(.horizontal, 60)
 
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
+            }
+
+            Image("SinAudioLogo")
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 140)
+                .foregroundColor(Color.white.opacity(0.9))
         }
         .padding(.horizontal, 26)
         .padding(.top, 10)
@@ -948,6 +982,7 @@ struct HomeIndicator: View {
 struct DevicePickerView: View {
     @ObservedObject var midi: MIDIManager
     @Binding var isPresented: Bool
+    @State private var showBluetoothMIDI = false
 
     var body: some View {
         NavigationView {
@@ -978,6 +1013,30 @@ struct DevicePickerView: View {
                         .scrollContentBackground(.hidden)
                     }
 
+                    // Bluetooth MIDI button
+                    #if !targetEnvironment(simulator)
+                    Button(action: { showBluetoothMIDI = true }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("BLUETOOTH MIDI")
+                                .font(.system(size: 12, weight: .bold))
+                                .tracking(1.5)
+                        }
+                        .foregroundColor(Color(hex: "#0A84FF"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "#0A84FF").opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color(hex: "#0A84FF").opacity(0.3), lineWidth: 1)
+                        )
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    #endif
+
                     // Diagnostic footer
                     VStack(spacing: 0) {
                         Divider()
@@ -1001,6 +1060,20 @@ struct DevicePickerView: View {
                                           isOK: midi.localIP != "—")
                             DiagnosticRow(label: "IN", value: "\(midi.incomingCount)",
                                           isOK: nil)
+                        }
+                        .padding(.horizontal, 16)
+
+                        // Bluetooth status
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("BLUETOOTH")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .tracking(1.5)
+                                .foregroundColor(Color(hex: "#555555"))
+                                .padding(.top, 8)
+                                .padding(.bottom, 4)
+
+                            DiagnosticRow(label: "BLE", value: midi.bleConnected ? (midi.blePeripheralName ?? "connected") : "off",
+                                          isOK: midi.bleConnected)
                         }
                         .padding(.horizontal, 16)
 
@@ -1080,6 +1153,28 @@ struct DevicePickerView: View {
             }
         }
         .preferredColorScheme(.dark)
+        #if !targetEnvironment(simulator)
+        .sheet(isPresented: $showBluetoothMIDI) {
+            NavigationView {
+                BluetoothMIDIView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showBluetoothMIDI = false }
+                                .foregroundColor(Color(hex: "#0A84FF"))
+                        }
+                    }
+            }
+            .preferredColorScheme(.dark)
+            .onDisappear {
+                // 0.5s delay — gives CoreBluetooth time to register the newly paired peripheral
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    midi.registerBLEPeripheral()
+                    midi.refreshDestinations()
+                }
+            }
+        }
+        #endif
     }
 }
 

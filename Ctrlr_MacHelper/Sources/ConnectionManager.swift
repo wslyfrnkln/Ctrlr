@@ -21,6 +21,8 @@ final class ConnectionManager: NSObject, ObservableObject {
     private var discoveryProcess: Process?
     private var phoneConnection: NWConnection?
     private var rejectedEndpoints: Set<String> = []
+    private var dnsSdRetryCount: Int = 0
+    private static let dnsSdMaxRetries = 5
 
     // Mac's own hostname stem (e.g. "wslyfrnkln-mac"), used to reject self-connections
     private let selfHost: String = {
@@ -106,6 +108,12 @@ final class ConnectionManager: NSObject, ObservableObject {
         discoveryProcess?.terminate()
         discoveryProcess = nil
         guard phoneConnection == nil else { return }
+
+        dnsSdRetryCount += 1
+        guard dnsSdRetryCount <= Self.dnsSdMaxRetries else {
+            updateDebug("dns-sd: gave up after \(Self.dnsSdMaxRetries) attempts — open Ctrlr on iPhone and tap Reconnect")
+            return
+        }
 
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: "/usr/bin/dns-sd")
@@ -195,6 +203,7 @@ final class ConnectionManager: NSObject, ObservableObject {
                 switch state {
                 case .ready:
                     // Don't confirm yet — wait for handshake ping from iPhone
+                    self.dnsSdRetryCount = 0  // Reset retry budget on successful connection
                     self.updateDebug("conn: verifying…")
                     // If no handshake within 5s, this is a stale record — blocklist and retry
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
@@ -271,6 +280,7 @@ final class ConnectionManager: NSObject, ObservableObject {
     func reconnect() {
         stopDiscovery()
         rejectedEndpoints.removeAll()
+        dnsSdRetryCount = 0  // Reset retry budget on manual reconnect
         if phoneConnection != nil {
             phoneConnection?.cancel()
             // .cancelled state handler will nil phoneConnection and call startBrowsing()

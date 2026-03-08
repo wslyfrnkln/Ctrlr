@@ -233,5 +233,9 @@ struct MenuBarContent: View {
             .padding(.vertical, 10)
         }
         .frame(width: 260)
+        .onAppear {
+            // Sync toggle with actual SMAppService state in case it changed externally
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
     }
 }
