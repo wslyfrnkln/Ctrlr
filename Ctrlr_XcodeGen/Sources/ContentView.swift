@@ -151,6 +151,13 @@ struct HeaderView: View {
                         .font(.system(size: 10, weight: .bold))
                         .tracking(2)
                         .foregroundColor(Color(hex: "#555555"))
+
+                    // BLE indicator — visible when a Bluetooth MIDI device is connected
+                    if midi.bleConnected {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(Color(hex: "#0A84FF"))
+                    }
                 }
 
                 Spacer()
@@ -975,6 +982,7 @@ struct HomeIndicator: View {
 struct DevicePickerView: View {
     @ObservedObject var midi: MIDIManager
     @Binding var isPresented: Bool
+    @State private var showBluetoothMIDI = false
 
     var body: some View {
         NavigationView {
@@ -1005,6 +1013,30 @@ struct DevicePickerView: View {
                         .scrollContentBackground(.hidden)
                     }
 
+                    // Bluetooth MIDI button
+                    #if !targetEnvironment(simulator)
+                    Button(action: { showBluetoothMIDI = true }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("BLUETOOTH MIDI")
+                                .font(.system(size: 12, weight: .bold))
+                                .tracking(1.5)
+                        }
+                        .foregroundColor(Color(hex: "#0A84FF"))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "#0A84FF").opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color(hex: "#0A84FF").opacity(0.3), lineWidth: 1)
+                        )
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    #endif
+
                     // Diagnostic footer
                     VStack(spacing: 0) {
                         Divider()
@@ -1028,6 +1060,20 @@ struct DevicePickerView: View {
                                           isOK: midi.localIP != "—")
                             DiagnosticRow(label: "IN", value: "\(midi.incomingCount)",
                                           isOK: nil)
+                        }
+                        .padding(.horizontal, 16)
+
+                        // Bluetooth status
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("BLUETOOTH")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .tracking(1.5)
+                                .foregroundColor(Color(hex: "#555555"))
+                                .padding(.top, 8)
+                                .padding(.bottom, 4)
+
+                            DiagnosticRow(label: "BLE", value: midi.bleConnected ? (midi.blePeripheralName ?? "connected") : "off",
+                                          isOK: midi.bleConnected)
                         }
                         .padding(.horizontal, 16)
 
@@ -1107,6 +1153,28 @@ struct DevicePickerView: View {
             }
         }
         .preferredColorScheme(.dark)
+        #if !targetEnvironment(simulator)
+        .sheet(isPresented: $showBluetoothMIDI) {
+            NavigationView {
+                BluetoothMIDIView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showBluetoothMIDI = false }
+                                .foregroundColor(Color(hex: "#0A84FF"))
+                        }
+                    }
+            }
+            .preferredColorScheme(.dark)
+            .onDisappear {
+                // 0.5s delay — gives CoreBluetooth time to register the newly paired peripheral
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    midi.registerBLEPeripheral()
+                    midi.refreshDestinations()
+                }
+            }
+        }
+        #endif
     }
 }
 

@@ -13,12 +13,14 @@
 		68C758043C610B3A7F49E3F3 /* Digital Dismay.otf in Resources */ = {isa = PBXBuildFile; fileRef = FF927BBC0ADA2C28CB81848A /* Digital Dismay.otf */; };
 		A49A6B47715EB5D1734CA753 /* CtrlrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010A366B19B8D7EBB5255C7E /* CtrlrApp.swift */; };
 		BEC54F8F446359B3D769F088 /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DD165EA50C76AC1A1EF580 /* MIDIManager.swift */; };
+		E86B157522CBC86888FE63D0 /* BluetoothMIDIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CB6F24783D12E0815CF8EB /* BluetoothMIDIView.swift */; };
 		EF96570124014EC5D536C00E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EC1605CC616AF78036225A9 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		010A366B19B8D7EBB5255C7E /* CtrlrApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CtrlrApp.swift; sourceTree = "<group>"; };
 		09DD165EA50C76AC1A1EF580 /* MIDIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIDIManager.swift; sourceTree = "<group>"; };
+		36CB6F24783D12E0815CF8EB /* BluetoothMIDIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BluetoothMIDIView.swift; sourceTree = "<group>"; };
 		4EC1605CC616AF78036225A9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6691490CB6A33418B9283FD3 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		711630A673914041ADA6623D /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
@@ -34,6 +36,7 @@
 			children = (
 				6691490CB6A33418B9283FD3 /* AppModel.swift */,
 				4EC1605CC616AF78036225A9 /* Assets.xcassets */,
+				36CB6F24783D12E0815CF8EB /* BluetoothMIDIView.swift */,
 				8F5E1FA78AC8FB1EB0D998AF /* ContentView.swift */,
 				010A366B19B8D7EBB5255C7E /* CtrlrApp.swift */,
 				FF927BBC0ADA2C28CB81848A /* Digital Dismay.otf */,
@@ -127,6 +130,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				479EFFA9C09F6AAB0FBD8B96 /* AppModel.swift in Sources */,
+				E86B157522CBC86888FE63D0 /* BluetoothMIDIView.swift in Sources */,
 				103D4F9AB4F5F433AD4418B2 /* ContentView.swift in Sources */,
 				A49A6B47715EB5D1734CA753 /* CtrlrApp.swift in Sources */,
 				008A26A9B923B69F4CC9D181 /* LaunchScreenView.swift in Sources */,
