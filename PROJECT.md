@@ -60,7 +60,7 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 **Deliverable:** App live on App Store
 
 - [ ] Apple Developer Program ($99/year)
-- [ ] Register Bundle ID
+- [x] Register Bundle ID
 - [ ] Create app in App Store Connect
 - [ ] Distribution certificate & provisioning profile
 - [ ] iPhone 6.7" screenshot (1290 × 2796)
@@ -177,6 +177,10 @@ iOS wireless MIDI controller for Ableton Live. Connects over WiFi via Bonjour au
 | 2026-01-12 | Error handling, auto-reconnect, company rename Nomaudio → SinAudio |
 
 ---
+
+
+## Notion Tasks
+- [ ] Device QA — physical iPhone BLE MIDI validation
 
 ## Model Usage
 
