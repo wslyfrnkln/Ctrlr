@@ -13,8 +13,6 @@ struct ContentView: View {
     @StateObject var model = AppModel()
 
     @State private var activeTab: Tab = .mixer
-    @State private var armOn = false
-    @State private var loopOn = true
     @State private var showDevicePicker = false
 
     enum Tab {
@@ -70,11 +68,7 @@ struct ContentView: View {
                 // ═══════════════════════════════════════════════════
                 // ARM / LOOP SECTION: Track arming and loop toggle
                 // ═══════════════════════════════════════════════════
-                ArmLoopSection(
-                    armOn: $armOn,
-                    loopOn: $loopOn,
-                    midi: midi
-                )
+                ArmLoopSection(midi: midi)
                 .padding(.horizontal, 18)
                 .padding(.top, 12)
                 .padding(.bottom, 10)
@@ -457,16 +451,6 @@ struct FaderKnob: View {
 struct QuickAccessView: View {
     @ObservedObject var midi: MIDIManager
 
-    // Macro definitions: icon, color, MIDI note, optional MMC command
-    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
-        ("↶", "#ff6b35", 68, "UNDO", nil),
-        ("↷", "#ff6b35", 69, "REDO", nil),
-        ("⊕", "#00d4ff", 70, "DUPLICATE", nil),
-        ("◆", "#ff3b30", 73, "DELETE", nil),
-        ("≪", "#3498db", 81, "RWD", 0x05),   // MMC Rewind
-        ("≫", "#3498db", 82, "FWD", 0x04)    // MMC Fast Forward
-    ]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("QUICK ACCESS")
@@ -479,16 +463,14 @@ struct QuickAccessView: View {
                 ForEach(0..<3, id: \.self) { row in
                     HStack(spacing: 8) {
                         ForEach(0..<2, id: \.self) { col in
-                            let i = row * 2 + col
+                            let macro = AppModel.quickAccessMacros[row * 2 + col]
                             MacroButton(
-                                icon: macros[i].icon,
-                                color: macros[i].color,
+                                icon: macro.icon,
+                                color: macro.color,
                                 action: {
-                                    midi.sendNoteOn(note: macros[i].note)
-                                    midi.sendNoteOff(note: macros[i].note)
-                                    if let mmc = macros[i].mmc {
-                                        midi.sendMMC(command: mmc)
-                                    }
+                                    midi.sendNoteOn(note: macro.note)
+                                    midi.sendNoteOff(note: macro.note)
+                                    if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
                                 }
                             )
                         }
@@ -511,28 +493,17 @@ struct QuickAccessView: View {
 struct FullMacrosView: View {
     @ObservedObject var midi: MIDIManager
 
-    // All 12 macro definitions (note + optional MMC)
-    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
-        ("↶", "#ff6b35", 68, "UNDO", nil), ("↷", "#ff6b35", 69, "REDO", nil),
-        ("+", "#00d4ff", 70, "ADD", nil), ("⚑", "#ffcc00", 72, "MARKER", nil),
-        ("◆", "#ff3b30", 73, "DELETE", nil), ("●", "#00ff88", 74, "RECORD", nil),
-        ("■", "#9b59b6", 75, "STOP", nil), ("▲", "#3498db", 76, "UP", nil),
-        ("≪", "#3498db", 81, "RWD", 0x05), ("≫", "#3498db", 82, "FWD", 0x04),
-        ("⬟", "#f39c12", 79, "OPTIONS", nil), ("✦", "#1abc9c", 80, "FAVORITE", nil)
-    ]
-
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 5) {
-            ForEach(0..<12, id: \.self) { i in
+            ForEach(AppModel.allMacros.indices, id: \.self) { i in
+                let macro = AppModel.allMacros[i]
                 MacroButton(
-                    icon: macros[i].icon,
-                    color: macros[i].color,
+                    icon: macro.icon,
+                    color: macro.color,
                     action: {
-                        midi.sendNoteOn(note: macros[i].note)
-                        midi.sendNoteOff(note: macros[i].note)
-                        if let mmc = macros[i].mmc {
-                            midi.sendMMC(command: mmc)
-                        }
+                        midi.sendNoteOn(note: macro.note)
+                        midi.sendNoteOff(note: macro.note)
+                        if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
                     }
                 )
             }
@@ -595,73 +566,51 @@ struct MacroButton: View {
 // =========================================================================
 
 struct ArmLoopSection: View {
-    @Binding var armOn: Bool
-    @Binding var loopOn: Bool
     @ObservedObject var midi: MIDIManager
 
     var body: some View {
         HStack(spacing: 8) {
             // ARM button: Momentary CC pulse — Ableton toggles internally
-            ArmLoopButton(
-                label: "ARM",
-                isActive: armOn,
-                color: "#ff3b30",
-                action: {
-                    armOn.toggle()
-                    midi.sendCC(cc: 65, value: 127)
-                    midi.sendCC(cc: 65, value: 0)
-                }
-            )
-
-            // LOOP button: Momentary CC pulse — Ableton toggles internally
-            ArmLoopButton(
-                label: "LOOP",
-                isActive: loopOn,
-                color: "#ff9500",
-                action: {
-                    loopOn.toggle()
-                    midi.sendCC(cc: 66, value: 127)
-                    midi.sendCC(cc: 66, value: 0)
-                }
-            )
+            // No latch state: UI can't know DAW arm state without MIDI input
+            ArmLoopButton(label: "ARM", color: "#ff3b30", cc: 65, midi: midi)
+            ArmLoopButton(label: "LOOP", color: "#ff9500", cc: 66, midi: midi)
         }
     }
 }
 
-// ARM/LOOP button with LED indicator and glow when active
+// Momentary ARM/LOOP button — glows while pressed, no persistent active state
 struct ArmLoopButton: View {
     let label: String
-    let isActive: Bool
     let color: String
-    let action: () -> Void
+    let cc: UInt8
+    @ObservedObject var midi: MIDIManager
+    @State private var isPressed = false
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {}) {
             ZStack {
-                // Button label
                 Text(label)
                     .font(.system(size: 12, weight: .bold))
                     .tracking(3)
-                    .foregroundColor(isActive ? .white : Color(hex: "#555555"))
+                    .foregroundColor(isPressed ? .white : Color(hex: "#555555"))
 
-                // LED indicator (top-right corner)
                 VStack {
                     HStack {
                         Spacer()
                         Circle()
-                            .fill(isActive ? .white : Color(hex: color))
+                            .fill(Color(hex: color))
                             .frame(width: 6, height: 6)
-                            .opacity(isActive ? 1 : 0.4)
-                            .shadow(color: isActive ? Color(hex: color) : .clear, radius: 8)
+                            .opacity(isPressed ? 1 : 0.4)
+                            .shadow(color: isPressed ? Color(hex: color) : .clear, radius: 8)
                     }
                     Spacer()
                 }
                 .padding(6)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 60) // Increased from 52
+            .frame(height: 60)
             .background(
-                isActive ?
+                isPressed ?
                 LinearGradient(
                     colors: [Color(hex: color), Color(hex: color).opacity(0.8)],
                     startPoint: .topLeading,
@@ -674,8 +623,15 @@ struct ArmLoopButton: View {
                 )
             )
             .cornerRadius(8)
-            .shadow(color: isActive ? Color(hex: color).opacity(0.5) : .black.opacity(0.4), radius: isActive ? 12 : 5, y: 4)
+            .shadow(color: isPressed ? Color(hex: color).opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 12 : 5, y: 4)
         }
+        .buttonStyle(PressableButtonStyle(onPressChanged: { pressed in
+            isPressed = pressed
+            if pressed {
+                midi.sendCC(cc: cc, value: 127)
+                midi.sendCC(cc: cc, value: 0)
+            }
+        }))
     }
 }
 
@@ -690,6 +646,8 @@ struct TransportSection: View {
     @ObservedObject var model: AppModel
     @ObservedObject var midi: MIDIManager
     @State private var stopPressed = false
+    @State private var playPressed = false
+    @State private var recordPressed = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -700,42 +658,41 @@ struct TransportSection: View {
                 onPressChanged: { isPressed in
                     stopPressed = isPressed
                     if isPressed {
-                        model.isPlaying = false
-                        model.isRecording = false
                         midi.sendNoteOn(note: model.noteStop)
                         midi.sendNoteOff(note: model.noteStop)
                         midi.sendMMC(command: 0x01)
                     }
                 }
             )
-            .frame(height: 64) // Increased from 56
+            .frame(height: 64)
 
             // PLAY and RECORD buttons: Side by side below STOP
             HStack(spacing: 8) {
                 TransportPlayButton(
-                    isPlaying: model.isPlaying,
-                    action: {
-                        model.isPlaying = true
-                        midi.sendNoteOn(note: model.notePlay)
-                        midi.sendNoteOff(note: model.notePlay)
-                        midi.sendMMC(command: 0x02)
+                    isPressed: playPressed,
+                    onPressChanged: { isPressed in
+                        playPressed = isPressed
+                        if isPressed {
+                            midi.sendNoteOn(note: model.notePlay)
+                            midi.sendNoteOff(note: model.notePlay)
+                            midi.sendMMC(command: 0x02)
+                        }
                     }
                 )
 
                 TransportRecordButton(
-                    isRecording: model.isRecording,
-                    action: {
-                        model.isRecording.toggle()
-                        if model.isRecording {
-                            model.isPlaying = true
+                    isPressed: recordPressed,
+                    onPressChanged: { isPressed in
+                        recordPressed = isPressed
+                        if isPressed {
+                            midi.sendNoteOn(note: model.noteRecord)
+                            midi.sendNoteOff(note: model.noteRecord)
+                            midi.sendMMC(command: 0x06)
                         }
-                        midi.sendNoteOn(note: model.noteRecord)
-                        midi.sendNoteOff(note: model.noteRecord)
-                        midi.sendMMC(command: 0x06)
                     }
                 )
             }
-            .frame(height: 120) // Increased from 100
+            .frame(height: 120)
         }
         .padding(10)
         .background(
@@ -807,27 +764,27 @@ struct PressableButtonStyle: ButtonStyle {
     }
 }
 
-// PLAY button: Green when active (playing state)
+// PLAY button: Green while pressed (momentary — no persistent state without DAW feedback)
 struct TransportPlayButton: View {
-    let isPlaying: Bool
-    let action: () -> Void
+    let isPressed: Bool
+    let onPressChanged: (Bool) -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {}) {
             VStack(spacing: 6) {
                 Text("▶")
                     .font(.system(size: 36))
-                    .foregroundColor(isPlaying ? .black : Color(hex: "#00ff88").opacity(0.35))
+                    .foregroundColor(isPressed ? .black : Color(hex: "#00ff88").opacity(0.35))
                     .padding(.leading, 4)
 
                 Text("PLAY")
                     .font(.system(size: 11, weight: .bold))
                     .tracking(3)
-                    .foregroundColor(isPlaying ? .black : Color(hex: "#00ff88").opacity(0.35))
+                    .foregroundColor(isPressed ? .black : Color(hex: "#00ff88").opacity(0.35))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                isPlaying ?
+                isPressed ?
                 LinearGradient(
                     colors: [Color(hex: "#00ff88"), Color(hex: "#00dd77")],
                     startPoint: .topLeading,
@@ -841,34 +798,35 @@ struct TransportPlayButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(isPlaying ? Color.clear : Color(hex: "#00ff88").opacity(0.15), lineWidth: 1)
+                    .stroke(isPressed ? Color.clear : Color(hex: "#00ff88").opacity(0.15), lineWidth: 1)
             )
             .cornerRadius(10)
-            .shadow(color: isPlaying ? Color(hex: "#00ff88").opacity(0.5) : .black.opacity(0.4), radius: isPlaying ? 17 : 8, y: 6)
+            .shadow(color: isPressed ? Color(hex: "#00ff88").opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 17 : 8, y: 6)
         }
+        .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
     }
 }
 
-// RECORD button: Red when active (recording state)
+// RECORD button: Red while pressed (momentary — no persistent state without DAW feedback)
 struct TransportRecordButton: View {
-    let isRecording: Bool
-    let action: () -> Void
+    let isPressed: Bool
+    let onPressChanged: (Bool) -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {}) {
             VStack(spacing: 6) {
                 Text("●")
                     .font(.system(size: 32))
-                    .foregroundColor(isRecording ? .white : Color(hex: "#ff3b30").opacity(0.35))
+                    .foregroundColor(isPressed ? .white : Color(hex: "#ff3b30").opacity(0.35))
 
                 Text("REC")
                     .font(.system(size: 11, weight: .bold))
                     .tracking(3)
-                    .foregroundColor(isRecording ? .white : Color(hex: "#ff3b30").opacity(0.35))
+                    .foregroundColor(isPressed ? .white : Color(hex: "#ff3b30").opacity(0.35))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
-                isRecording ?
+                isPressed ?
                 LinearGradient(
                     colors: [Color(hex: "#ff3b30"), Color(hex: "#dd3328")],
                     startPoint: .topLeading,
@@ -882,11 +840,12 @@ struct TransportRecordButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(isRecording ? Color.clear : Color(hex: "#ff3b30").opacity(0.15), lineWidth: 1)
+                    .stroke(isPressed ? Color.clear : Color(hex: "#ff3b30").opacity(0.15), lineWidth: 1)
             )
             .cornerRadius(10)
-            .shadow(color: isRecording ? Color(hex: "#ff3b30").opacity(0.5) : .black.opacity(0.4), radius: isRecording ? 17 : 8, y: 6)
+            .shadow(color: isPressed ? Color(hex: "#ff3b30").opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 17 : 8, y: 6)
         }
+        .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
     }
 }
 
@@ -899,22 +858,25 @@ struct TransportRecordButton: View {
 
 struct ConsoleBranding: View {
     var body: some View {
-        HStack(spacing: 10) {
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+        VStack(spacing: 6) {
+            HStack(spacing: 10) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
 
-            Text("CTRLR")
-                .font(.custom("DigitalDismay", size: 25))
-                .tracking(8)
-                .foregroundColor(Color.white.opacity(0.250))
-                .fixedSize()
-                .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
-                .padding(.horizontal, 60)
+                Text("CTRLR")
+                    .font(.custom("DigitalDismay", size: 25))
+                    .tracking(8)
+                    .foregroundColor(Color.white.opacity(0.250))
+                    .fixedSize()
+                    .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
+                    .padding(.horizontal, 60)
 
-            Rectangle()
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 0.6)
+                Rectangle()
+                    .fill(Color.white.opacity(0.5))
+                    .frame(height: 0.6)
+            }
+
         }
         .padding(.horizontal, 26)
         .padding(.top, 10)
@@ -925,19 +887,6 @@ struct ConsoleBranding: View {
 
 // =========================================================================
 // MARK: - Home Indicator: iPhone Gesture Bar
-// =========================================================================
-// Small rounded bar at bottom matching iOS home indicator
-// =========================================================================
-
-struct HomeIndicator: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(Color(hex: "#333333"))
-            .frame(width: 100, height: 4)
-            .padding(.bottom, 8)
-    }
-}
-
 // =========================================================================
 // MARK: - Device Picker Sheet: Select MIDI Destination
 // =========================================================================
@@ -1080,30 +1029,6 @@ struct DevicePickerView: View {
             }
         }
         .preferredColorScheme(.dark)
-    }
-}
-
-// Diagnostic row: colored dot + label + value
-struct DiagRow: View {
-    let label: String
-    let value: String
-    let ok: Bool
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(ok ? Color(hex: "#00ff88") : Color(hex: "#555555"))
-                .frame(width: 5, height: 5)
-            Text(label)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(Color(hex: "#555555"))
-                .frame(width: 28, alignment: .leading)
-            Text(value)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(ok ? Color(hex: "#00ff88") : Color(hex: "#666666"))
-                .lineLimit(1)
-                .truncationMode(.tail)
-        }
     }
 }
 
@@ -1322,7 +1247,6 @@ struct DiagnosticRow: View {
         VStack {
             Spacer()
             ConsoleBranding()
-            HomeIndicator()
         }
     }
 }
@@ -1336,15 +1260,12 @@ struct DiagnosticRow: View {
     }
 }
 
-/// ARM / LOOP buttons — test active/inactive states
+/// ARM / LOOP buttons — momentary, no persistent state
 #Preview("Arm Loop") {
     ZStack {
         Color(hex: "#0c0c0c").ignoresSafeArea()
-        VStack(spacing: 12) {
-            ArmLoopSection(armOn: .constant(false), loopOn: .constant(true),  midi: MIDIManager())
-            ArmLoopSection(armOn: .constant(true),  loopOn: .constant(false), midi: MIDIManager())
-        }
-        .padding(.horizontal, 10)
+        ArmLoopSection(midi: MIDIManager())
+            .padding(.horizontal, 10)
     }
 }
 

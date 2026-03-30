@@ -24,7 +24,7 @@ enum MIDIConnectionError: Error, LocalizedError {
 
 // MARK: - MIDI Manager
 
-final class MIDIManager: ObservableObject {
+@MainActor final class MIDIManager: ObservableObject {
     private var client = MIDIClientRef()
     private var outPort = MIDIPortRef()
 
@@ -83,7 +83,7 @@ final class MIDIManager: ObservableObject {
 
         // Guard against stale callbacks from a previously cancelled listener
         listener.stateUpdateHandler = { [weak self, weak listener] state in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self, self.midiListener === listener else { return }
                 switch state {
                 case .ready:
@@ -98,7 +98,7 @@ final class MIDIManager: ObservableObject {
         }
 
         listener.serviceRegistrationUpdateHandler = { [weak self, weak listener] change in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self, self.midiListener === listener else { return }
                 switch change {
                 case .add(let endpoint): self.serviceDebug = "\(endpoint)"
@@ -109,11 +109,11 @@ final class MIDIManager: ObservableObject {
         }
 
         listener.newConnectionHandler = { [weak self, weak listener] connection in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self, self.midiListener === listener else { return }
                 self.incomingCount += 1
+                self.acceptMacConnection(connection)
             }
-            self?.acceptMacConnection(connection)
         }
         listener.start(queue: .main)
         midiListener = listener
@@ -132,7 +132,8 @@ final class MIDIManager: ObservableObject {
             midiListener?.cancel()
             midiListener = nil
             // Brief delay for port release before rebinding
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(500))
                 self?.startMIDIServer()
             }
         } else {
@@ -167,8 +168,8 @@ final class MIDIManager: ObservableObject {
         // Capture connection weakly so stale callbacks from a cancelled/replaced
         // connection don't overwrite state belonging to the *new* connection.
         connection.stateUpdateHandler = { [weak self, weak connection] state in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 switch state {
                 case .ready:
                     self.companionConnected = true
@@ -203,12 +204,14 @@ final class MIDIManager: ObservableObject {
 
     // MARK: - MIDI Notifications
 
-    private func handleMIDINotification(_ notification: UnsafePointer<MIDINotification>) {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            switch notification.pointee.messageID {
+    private nonisolated func handleMIDINotification(_ notification: UnsafePointer<MIDINotification>) {
+        let messageID = notification.pointee.messageID
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            switch messageID {
             case .msgSetupChanged, .msgObjectAdded, .msgObjectRemoved:
-                self.refreshDestinations(); self.attemptReconnect()
+                self.refreshDestinations()
+                self.attemptReconnect()
             default:
                 self.refreshDestinations()
             }
@@ -291,7 +294,14 @@ final class MIDIManager: ObservableObject {
 
         // Send to Mac companion via TCP (length-prefixed)
         if let conn = macConnection {
-            conn.send(content: Data([UInt8(data.count)] + data), completion: .idempotent)
+            conn.send(content: Data([UInt8(data.count)] + data), completion: .contentProcessed({ [weak self] error in
+                if let error {
+                    Task { @MainActor [weak self] in
+                        self?.companionConnected = false
+                        self?.companionDebug = "tcp send failed: \(error)"
+                    }
+                }
+            }))
         }
 
         // Also send via CoreMIDI if a destination is selected
@@ -300,19 +310,19 @@ final class MIDIManager: ObservableObject {
             return
         }
 
-        var packetList = MIDIPacketList(numPackets: 1, packet: MIDIPacket())
-        withUnsafeMutablePointer(to: &packetList) { ptr in
-            let pkt = MIDIPacketListInit(ptr)
-            if MIDIPacketListAdd(ptr, 1024, pkt, 0, data.count, data) != nil {
-                let r = MIDISend(outPort, dest, ptr)
-                if r != noErr { DispatchQueue.main.async { self.lastError = .sendFailed(r); self.connectionState = .error } }
-            }
+        let byteSize = max(128, MemoryLayout<MIDIPacketList>.size + MemoryLayout<MIDIPacket>.size + data.count)
+        let builder = MIDIPacketList.Builder(byteSize: byteSize)
+        builder.append(timestamp: 0, data: data)
+        let r = builder.withUnsafePointer { MIDISend(outPort, dest, $0) }
+        if r != noErr {
+            lastError = .sendFailed(r)
+            connectionState = .error
         }
     }
 
-    func sendNoteOn(note: UInt8, velocity: UInt8 = 100, channel: UInt8 = 0) { sendPacket([0x90 | channel, note, velocity]) }
-    func sendNoteOff(note: UInt8, channel: UInt8 = 0)                       { sendPacket([0x80 | channel, note, 0]) }
-    func sendCC(cc: UInt8, value: UInt8, channel: UInt8 = 0)                { sendPacket([0xB0 | channel, cc, value]) }
+    func sendNoteOn(note: UInt8, velocity: UInt8 = 100, channel: UInt8 = 0) { sendPacket([0x90 | (channel & 0x0F), note, velocity]) }
+    func sendNoteOff(note: UInt8, channel: UInt8 = 0)                       { sendPacket([0x80 | (channel & 0x0F), note, 0]) }
+    func sendCC(cc: UInt8, value: UInt8, channel: UInt8 = 0)                { sendPacket([0xB0 | (channel & 0x0F), cc, value]) }
 
     /// Universal Real-Time MMC: F0 7F 7F 06 <cmd> F7
     /// Stop=0x01, Play=0x02, Record=0x06
