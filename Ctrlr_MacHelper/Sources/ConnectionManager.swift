@@ -7,20 +7,22 @@ import Network
 // so stale Simulator records (which resolve to the Mac itself) are rejected.
 // Routes received MIDI bytes to the "Ctrlr" virtual source visible in all DAWs.
 
-final class ConnectionManager: NSObject, ObservableObject {
+@MainActor final class ConnectionManager: NSObject, ObservableObject {
     @Published var isConnected = false
     @Published var connectedName: String?
     @Published var sourceCount = 0
     @Published var debugLines: [String] = []
     @Published var connectedEndpoint: String?
 
-    private var midiClient = MIDIClientRef()
-    private var virtualSource = MIDIEndpointRef()     // "Ctrlr" — claimed by remote script
-    private var mapSource = MIDIEndpointRef()          // "Ctrlr Map" — MIDI-learnable
+    // nonisolated(unsafe): set once in init, never mutated — safe to access from deinit and nonisolated route()
+    nonisolated(unsafe) private var midiClient = MIDIClientRef()
+    nonisolated(unsafe) private var virtualSource = MIDIEndpointRef()     // "Ctrlr" — claimed by remote script
+    nonisolated(unsafe) private var mapSource = MIDIEndpointRef()          // "Ctrlr Map" — MIDI-learnable
     private var browser: NWBrowser?
     private var discoveryProcess: Process?
     private var phoneConnection: NWConnection?
     private var rejectedEndpoints: Set<String> = []
+    private var dnsSdBuffer: String = ""   // accumulates dns-sd output; only mutated on readabilityHandler serial queue
 
     // Mac's own hostname stem (e.g. "wslyfrnkln-mac"), used to reject self-connections
     private let selfHost: String = {
@@ -38,9 +40,15 @@ final class ConnectionManager: NSObject, ObservableObject {
     // MARK: - Virtual MIDI Port
 
     private func setupVirtualMIDI() {
-        MIDIClientCreateWithBlock("CtrlrHelper" as CFString, &midiClient) { _ in }
-        MIDISourceCreate(midiClient, "Ctrlr" as CFString, &virtualSource)
-        MIDISourceCreate(midiClient, "Ctrlr Map" as CFString, &mapSource)
+        let clientStatus = MIDIClientCreateWithBlock("CtrlrHelper" as CFString, &midiClient) { _ in }
+        guard clientStatus == noErr else {
+            updateDebug("MIDI client failed: \(clientStatus)")
+            return
+        }
+        let srcStatus = MIDISourceCreate(midiClient, "Ctrlr" as CFString, &virtualSource)
+        if srcStatus != noErr { updateDebug("Ctrlr source failed: \(srcStatus)") }
+        let mapStatus = MIDISourceCreate(midiClient, "Ctrlr Map" as CFString, &mapSource)
+        if mapStatus != noErr { updateDebug("Ctrlr Map source failed: \(mapStatus)") }
         updateDebug()
     }
 
@@ -54,12 +62,12 @@ final class ConnectionManager: NSObject, ObservableObject {
         let newBrowser = NWBrowser(for: descriptor, using: .tcp)
 
         newBrowser.stateUpdateHandler = { [weak self] state in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 switch state {
                 case .ready:
                     self.updateDebug("NWBrowser: searching…")
-                case .failed(let error):
+                case .failed:
                     self.updateDebug("NWBrowser failed → dns-sd")
                     self.browser?.cancel()
                     self.browser = nil
@@ -72,7 +80,7 @@ final class ConnectionManager: NSObject, ObservableObject {
         }
 
         newBrowser.browseResultsChangedHandler = { [weak self] results, _ in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self, self.phoneConnection == nil else { return }
                 guard let result = results.first(where: {
                     if case .service(let name, _, _, _) = $0.endpoint {
@@ -91,7 +99,8 @@ final class ConnectionManager: NSObject, ObservableObject {
         updateDebug("NWBrowser: starting…")
 
         // Fallback: if NWBrowser finds nothing after 10s, try dns-sd
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(10))
             guard let self, self.phoneConnection == nil, self.browser != nil else { return }
             self.updateDebug("NWBrowser timeout → dns-sd")
             self.browser?.cancel()
@@ -115,34 +124,37 @@ final class ConnectionManager: NSObject, ObservableObject {
         proc.standardOutput = pipe
         proc.standardError = Pipe()
 
-        var buffer = ""
+        dnsSdBuffer = ""
         pipe.fileHandleForReading.readabilityHandler = { [weak self, weak proc] handle in
-            guard let data = try? handle.availableData,
-                  !data.isEmpty,
+            let data = handle.availableData
+            guard !data.isEmpty,
                   let chunk = String(data: data, encoding: .utf8) else { return }
-            buffer += chunk
-            guard let self, let (host, port) = Self.parseHostPort(from: buffer) else { return }
-            proc?.terminate()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.dnsSdBuffer += chunk
+                guard let (host, port) = Self.parseHostPort(from: self.dnsSdBuffer) else { return }
+                proc?.terminate()
 
-            // Reject self-referential connections (Simulator stale records)
-            let resolved = host.lowercased()
-                .replacingOccurrences(of: ".local.", with: "")
-                .replacingOccurrences(of: ".local", with: "")
-            if resolved == self.selfHost {
-                DispatchQueue.main.async {
+                // Reject self-referential connections (Simulator stale records)
+                let resolved = host.lowercased()
+                    .replacingOccurrences(of: ".local.", with: "")
+                    .replacingOccurrences(of: ".local", with: "")
+                if resolved == self.selfHost {
                     self.updateDebug("dns-sd: skipped self (\(host))")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        guard self.phoneConnection == nil else { return }
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(3))
+                        guard let self, self.phoneConnection == nil else { return }
                         self.startDnsSdFallback()
                     }
+                    return
                 }
-                return
+                self.connectToHost(host, port: port)
             }
-            DispatchQueue.main.async { self.connectToHost(host, port: port) }
         }
 
         proc.terminationHandler = { [weak self] _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(3))
                 guard let self, self.phoneConnection == nil else { return }
                 self.startDnsSdFallback()
             }
@@ -157,12 +169,13 @@ final class ConnectionManager: NSObject, ObservableObject {
         }
 
         // Kill after 8s so terminationHandler fires and we retry
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak proc] in
-            proc?.terminate()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            proc.terminate()
         }
     }
 
-    private static func parseHostPort(from output: String) -> (String, UInt16)? {
+    private nonisolated static func parseHostPort(from output: String) -> (String, UInt16)? {
         let pattern = #"can be reached at ([^\s:]+):(\d+)"#
         guard let regex = try? NSRegularExpression(pattern: pattern),
               let match = regex.firstMatch(in: output,
@@ -190,14 +203,15 @@ final class ConnectionManager: NSObject, ObservableObject {
 
     private func setupConnection(_ connection: NWConnection) {
         connection.stateUpdateHandler = { [weak self] state in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 guard let self else { return }
                 switch state {
                 case .ready:
                     // Don't confirm yet — wait for handshake ping from iPhone
                     self.updateDebug("conn: verifying…")
                     // If no handshake within 5s, this is a stale record — blocklist and retry
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                    Task { @MainActor [weak self] in
+                        try? await Task.sleep(for: .seconds(5))
                         guard let self, !self.isConnected, self.phoneConnection != nil else { return }
                         if let ep = self.connectedEndpoint {
                             self.rejectedEndpoints.insert(ep)
@@ -232,14 +246,19 @@ final class ConnectionManager: NSObject, ObservableObject {
 
     // Each message framed as: [1-byte length][midi bytes...]
     // 0xFF = handshake ping from iPhone (not routed to MIDI)
-    private func receiveMIDI(from connection: NWConnection) {
+    private nonisolated func receiveMIDI(from connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 1) { [weak self] data, _, _, error in
             guard let length = data?.first, error == nil else { return }
+            guard length > 0 else {
+                // Invalid zero-length frame — break synchronous recursion via async hop
+                Task { [weak self] in self?.receiveMIDI(from: connection) }
+                return
+            }
             connection.receive(minimumIncompleteLength: Int(length), maximumLength: Int(length)) { [weak self] msg, _, _, err in
                 if let msg = msg, !msg.isEmpty {
                     if msg.first == 0xFF {
                         // Handshake confirmed — this is the real Ctrlr app
-                        DispatchQueue.main.async {
+                        Task { @MainActor [weak self] in
                             guard let self else { return }
                             self.isConnected = true
                             self.connectedName = "Ctrlr"
@@ -255,12 +274,11 @@ final class ConnectionManager: NSObject, ObservableObject {
         }
     }
 
-    private func route(_ data: Data) {
+    private nonisolated func route(_ data: Data) {
         let bytes = [UInt8](data)
-        var packetList = MIDIPacketList(numPackets: 1, packet: MIDIPacket())
-        withUnsafeMutablePointer(to: &packetList) { ptr in
-            let pkt = MIDIPacketListInit(ptr)
-            _ = MIDIPacketListAdd(ptr, 1024, pkt, 0, bytes.count, bytes)
+        let builder = MIDIPacketList.Builder(byteSize: 256)
+        builder.append(timestamp: 0, data: bytes)
+        builder.withUnsafePointer { ptr in
             MIDIReceived(virtualSource, ptr)  // Script port (transport/mixer)
             MIDIReceived(mapSource, ptr)      // Map port (MIDI-learnable)
         }
