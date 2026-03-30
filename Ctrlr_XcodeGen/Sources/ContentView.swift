@@ -877,12 +877,6 @@ struct ConsoleBranding: View {
                     .frame(height: 0.6)
             }
 
-            Image("SinAudioLogo")
-                .renderingMode(.template)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 140)
-                .foregroundColor(Color.white.opacity(0.9))
         }
         .padding(.horizontal, 26)
         .padding(.top, 10)

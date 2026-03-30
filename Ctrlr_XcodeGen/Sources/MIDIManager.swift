@@ -310,7 +310,8 @@ enum MIDIConnectionError: Error, LocalizedError {
             return
         }
 
-        let builder = MIDIPacketList.Builder(byteSize: 256)
+        let byteSize = max(128, MemoryLayout<MIDIPacketList>.size + MemoryLayout<MIDIPacket>.size + data.count)
+        let builder = MIDIPacketList.Builder(byteSize: byteSize)
         builder.append(timestamp: 0, data: data)
         let r = builder.withUnsafePointer { MIDISend(outPort, dest, $0) }
         if r != noErr {

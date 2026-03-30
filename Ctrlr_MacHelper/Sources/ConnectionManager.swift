@@ -276,7 +276,9 @@ import Network
 
     private nonisolated func route(_ data: Data) {
         let bytes = [UInt8](data)
-        let builder = MIDIPacketList.Builder(byteSize: 256)
+        // Size = MIDIPacketList header (4) + MIDIPacket header (8) + payload, minimum 128
+        let byteSize = max(128, MemoryLayout<MIDIPacketList>.size + MemoryLayout<MIDIPacket>.size + bytes.count)
+        let builder = MIDIPacketList.Builder(byteSize: byteSize)
         builder.append(timestamp: 0, data: bytes)
         builder.withUnsafePointer { ptr in
             MIDIReceived(virtualSource, ptr)  // Script port (transport/mixer)
