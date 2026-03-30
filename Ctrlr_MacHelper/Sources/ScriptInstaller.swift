@@ -34,12 +34,10 @@ struct ScriptInstaller {
 
     enum InstallError: Error, LocalizedError {
         case bundleNotFound
-        case copyFailed(String)
 
         var errorDescription: String? {
             switch self {
             case .bundleNotFound: return "Script bundle not found inside app."
-            case .copyFailed(let msg): return "Copy failed: \(msg)"
             }
         }
     }

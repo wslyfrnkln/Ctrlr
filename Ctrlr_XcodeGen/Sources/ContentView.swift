@@ -894,19 +894,6 @@ struct ConsoleBranding: View {
 // =========================================================================
 // MARK: - Home Indicator: iPhone Gesture Bar
 // =========================================================================
-// Small rounded bar at bottom matching iOS home indicator
-// =========================================================================
-
-struct HomeIndicator: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(Color(hex: "#333333"))
-            .frame(width: 100, height: 4)
-            .padding(.bottom, 8)
-    }
-}
-
-// =========================================================================
 // MARK: - Device Picker Sheet: Select MIDI Destination
 // =========================================================================
 // Modal sheet that displays all available MIDI destinations
@@ -1048,30 +1035,6 @@ struct DevicePickerView: View {
             }
         }
         .preferredColorScheme(.dark)
-    }
-}
-
-// Diagnostic row: colored dot + label + value
-struct DiagRow: View {
-    let label: String
-    let value: String
-    let ok: Bool
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(ok ? Color(hex: "#00ff88") : Color(hex: "#555555"))
-                .frame(width: 5, height: 5)
-            Text(label)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(Color(hex: "#555555"))
-                .frame(width: 28, alignment: .leading)
-            Text(value)
-                .font(.system(size: 9, design: .monospaced))
-                .foregroundColor(ok ? Color(hex: "#00ff88") : Color(hex: "#666666"))
-                .lineLimit(1)
-                .truncationMode(.tail)
-        }
     }
 }
 
@@ -1290,7 +1253,6 @@ struct DiagnosticRow: View {
         VStack {
             Spacer()
             ConsoleBranding()
-            HomeIndicator()
         }
     }
 }

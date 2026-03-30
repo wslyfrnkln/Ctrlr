@@ -37,7 +37,7 @@ struct LaunchScreenView: View {
 
                 // App name in Digital Dismay font matching console branding
                 Text("CTRLR")
-                    .font(.custom("Digital Dismay", size: 13))
+                    .font(.custom("DigitalDismay", size: 13))
                     .foregroundColor(Color(hex: "#a89f94"))
                     .kerning(4)
             }
