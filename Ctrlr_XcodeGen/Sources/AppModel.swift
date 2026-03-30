@@ -1,8 +1,6 @@
 import Foundation
 
 @MainActor final class AppModel: ObservableObject {
-    @Published var isPlaying = false
-    @Published var isRecording = false
     @Published var faderValue: Double = 0.7 // 0.0 ... 1.0
 
     // MIDI mapping (match Ableton UserConfiguration.txt)
