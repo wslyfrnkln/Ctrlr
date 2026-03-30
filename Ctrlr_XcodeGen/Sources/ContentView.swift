@@ -451,16 +451,6 @@ struct FaderKnob: View {
 struct QuickAccessView: View {
     @ObservedObject var midi: MIDIManager
 
-    // Macro definitions: icon, color, MIDI note, optional MMC command
-    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
-        ("↶", "#ff6b35", 68, "UNDO", nil),
-        ("↷", "#ff6b35", 69, "REDO", nil),
-        ("⊕", "#00d4ff", 70, "DUPLICATE", nil),
-        ("◆", "#ff3b30", 73, "DELETE", nil),
-        ("≪", "#3498db", 81, "RWD", 0x05),   // MMC Rewind
-        ("≫", "#3498db", 82, "FWD", 0x04)    // MMC Fast Forward
-    ]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("QUICK ACCESS")
@@ -473,16 +463,14 @@ struct QuickAccessView: View {
                 ForEach(0..<3, id: \.self) { row in
                     HStack(spacing: 8) {
                         ForEach(0..<2, id: \.self) { col in
-                            let i = row * 2 + col
+                            let macro = AppModel.quickAccessMacros[row * 2 + col]
                             MacroButton(
-                                icon: macros[i].icon,
-                                color: macros[i].color,
+                                icon: macro.icon,
+                                color: macro.color,
                                 action: {
-                                    midi.sendNoteOn(note: macros[i].note)
-                                    midi.sendNoteOff(note: macros[i].note)
-                                    if let mmc = macros[i].mmc {
-                                        midi.sendMMC(command: mmc)
-                                    }
+                                    midi.sendNoteOn(note: macro.note)
+                                    midi.sendNoteOff(note: macro.note)
+                                    if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
                                 }
                             )
                         }
@@ -505,28 +493,17 @@ struct QuickAccessView: View {
 struct FullMacrosView: View {
     @ObservedObject var midi: MIDIManager
 
-    // All 12 macro definitions (note + optional MMC)
-    let macros: [(icon: String, color: String, note: UInt8, name: String, mmc: UInt8?)] = [
-        ("↶", "#ff6b35", 68, "UNDO", nil), ("↷", "#ff6b35", 69, "REDO", nil),
-        ("+", "#00d4ff", 70, "ADD", nil), ("⚑", "#ffcc00", 72, "MARKER", nil),
-        ("◆", "#ff3b30", 73, "DELETE", nil), ("●", "#00ff88", 74, "RECORD", nil),
-        ("■", "#9b59b6", 75, "STOP", nil), ("▲", "#3498db", 76, "UP", nil),
-        ("≪", "#3498db", 81, "RWD", 0x05), ("≫", "#3498db", 82, "FWD", 0x04),
-        ("⬟", "#f39c12", 79, "OPTIONS", nil), ("✦", "#1abc9c", 80, "FAVORITE", nil)
-    ]
-
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 5) {
-            ForEach(0..<12, id: \.self) { i in
+            ForEach(AppModel.allMacros.indices, id: \.self) { i in
+                let macro = AppModel.allMacros[i]
                 MacroButton(
-                    icon: macros[i].icon,
-                    color: macros[i].color,
+                    icon: macro.icon,
+                    color: macro.color,
                     action: {
-                        midi.sendNoteOn(note: macros[i].note)
-                        midi.sendNoteOff(note: macros[i].note)
-                        if let mmc = macros[i].mmc {
-                            midi.sendMMC(command: mmc)
-                        }
+                        midi.sendNoteOn(note: macro.note)
+                        midi.sendNoteOff(note: macro.note)
+                        if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
                     }
                 )
             }
