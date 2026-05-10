@@ -1,898 +1,22 @@
 import SwiftUI
 import CoreMIDI
 
-// =========================================================================
-// MARK: - Main View (Redesigned from launchpad-v4-iphone17.jsx)
-// =========================================================================
-// This is the root view that contains all UI sections stacked vertically.
-// Uses dark theme with modern gradients, glows, and professional styling.
-// =========================================================================
+// MARK: - Root
 
 struct ContentView: View {
     @StateObject var midi = MIDIManager()
     @StateObject var model = AppModel()
-
-    @State private var activeTab: Tab = .mixer
     @State private var showDevicePicker = false
 
-    enum Tab {
-        case mixer, macros
-    }
-
     var body: some View {
-        ZStack {
-            // Deep black background for pro studio look
-            Color(hex: "#0c0c0c")
-                .ignoresSafeArea()
-
-            // Subtle white gradient overlay for depth
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.06),
-                    Color.clear
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            VStack(spacing: 4) {
-                // ═══════════════════════════════════════════════════
-                // HEADER: Connection status + DEVICES button
-                // ═══════════════════════════════════════════════════
-                HeaderView(midi: midi, showDevicePicker: $showDevicePicker)
-                    .padding(.top, -10)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 6)
-
-                // ═══════════════════════════════════════════════════
-                // TAB SELECTOR: Switch between MIXER and MACROS views
-                // ═══════════════════════════════════════════════════
-                TabSelector(activeTab: $activeTab)
-                    .padding(.horizontal, 10)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
-
-                // ═══════════════════════════════════════════════════
-                // MAIN CONTENT AREA: Fader + Macros (switchable via tabs)
-                // ═══════════════════════════════════════════════════
-                MainContentArea(
-                    activeTab: activeTab,
-                    model: model,
-                    midi: midi
-                )
-                .padding(.horizontal, 10)
-                .padding(.top, 8)
-                .frame(height: 260)
-
-                // ═══════════════════════════════════════════════════
-                // ARM / LOOP SECTION: Track arming and loop toggle
-                // ═══════════════════════════════════════════════════
-                ArmLoopSection(midi: midi)
-                .padding(.horizontal, 18)
-                .padding(.top, 12)
-                .padding(.bottom, 10)
-                .frame(height: 90)
-
-                // ═══════════════════════════════════════════════════
-                // TRANSPORT CONTROLS: STOP, PLAY, RECORD buttons
-                // ═══════════════════════════════════════════════════
-                TransportSection(model: model, midi: midi)
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 10)
-                    .frame(height: 230)
-
-                // ═══════════════════════════════════════════════════
-                // CONSOLE BRANDING
-                // ═══════════════════════════════════════════════════
-                ConsoleBranding()
-            }
-        }
-        .preferredColorScheme(.dark)
-        .sheet(isPresented: $showDevicePicker) {
-            DevicePickerView(midi: midi, isPresented: $showDevicePicker)
-        }
-    }
-}
-
-// =========================================================================
-// MARK: - Header: Connection Status + DEVICES Button
-// =========================================================================
-// Shows connection LED (green/yellow/red) and button to refresh MIDI destinations
-// Green = Connected, Yellow = Error, Red = Disconnected
-// =========================================================================
-
-struct HeaderView: View {
-    @ObservedObject var midi: MIDIManager
-    @Binding var showDevicePicker: Bool
-
-    // Computed properties for status display
-    private var statusColor: Color {
-        switch midi.connectionState {
-        case .connected:
-            return Color(hex: "#00ff88")  // Green
-        case .error:
-            return Color(hex: "#ffcc00")  // Yellow
-        case .disconnected:
-            return Color(hex: "#ff3b30")  // Red
-        }
-    }
-
-    private var statusText: String {
-        switch midi.connectionState {
-        case .connected:
-            return "CONNECTED"
-        case .error:
-            return "ERROR"
-        case .disconnected:
-            return "DISCONNECTED"
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 4) {
-            HStack {
-                // Connection status: LED + label
-                HStack(spacing: 8) {
-                    // LED indicator with glow effect
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: statusColor, radius: 8)
-
-                    Text(statusText)
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(2)
-                        .foregroundColor(Color(hex: "#555555"))
-                }
-
-                Spacer()
-
-                // DEVICES button to show device picker sheet
-                Button(action: {
-                    midi.refreshDestinations()
-                    showDevicePicker = true
-                }) {
-                    Text("DEVICES")
-                        .font(.system(size: 10, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(Color(hex: "#ff6b35"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Color(hex: "#ff6b35").opacity(0.12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color(hex: "#ff6b35").opacity(0.25), lineWidth: 1)
-                        )
-                        .cornerRadius(5)
-                }
-            }
-
-            // Error message banner (shown when there's an error)
-            if let error = midi.lastError {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color(hex: "#ffcc00"))
-
-                    Text(error.localizedDescription)
-                        .font(.system(size: 8, weight: .medium))
-                        .foregroundColor(Color(hex: "#ffcc00"))
-
-                    Spacer()
-
-                    // Dismiss button
-                    Button(action: {
-                        midi.clearError()
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundColor(Color(hex: "#666666"))
-                    }
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color(hex: "#ffcc00").opacity(0.1))
-                .cornerRadius(4)
-            }
-        }
-    }
-}
-
-// =========================================================================
-// MARK: - Tab Selector: Switch Between MIXER and MACROS
-// =========================================================================
-// Two-button segmented control to toggle between main view modes
-// =========================================================================
-
-struct TabSelector: View {
-    @Binding var activeTab: ContentView.Tab
-
-    var body: some View {
-        HStack(spacing: 2) {
-            TabButton(title: "MIXER", isActive: activeTab == .mixer) {
-                activeTab = .mixer
-            }
-            TabButton(title: "MACROS", isActive: activeTab == .macros) {
-                activeTab = .macros
-            }
-        }
-        .padding(2)
-        .background(Color(hex: "#131313"))
-        .cornerRadius(6)
-    }
-}
-
-// Individual tab button with active state styling
-struct TabButton: View {
-    let title: String
-    let isActive: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 9, weight: .bold))
-                .tracking(2)
-                .foregroundColor(isActive ? .white : Color(hex: "#444444"))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(
-                    isActive ?
-                    LinearGradient(
-                        colors: [Color(hex: "#282828"), Color(hex: "#1e1e1e")],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ) :
-                    LinearGradient(colors: [Color.clear], startPoint: .top, endPoint: .bottom)
-                )
-                .cornerRadius(5)
-        }
-    }
-}
-
-// =========================================================================
-// MARK: - Main Content Area: Fader + Macros (Tab-Dependent)
-// =========================================================================
-// Shows either: (1) SSL Fader + Quick Access Macros, or (2) Full Macro Grid
-// Dark gradient background with subtle border
-// =========================================================================
-
-struct MainContentArea: View {
-    let activeTab: ContentView.Tab
-    @ObservedObject var model: AppModel
-    @ObservedObject var midi: MIDIManager
-
-    var body: some View {
-        HStack(spacing: 0) {
-            if activeTab == .mixer {
-                // MIXER VIEW: Vertical fader + 6 quick access macro buttons
-                HStack(spacing: 10) {
-                    // SSL-style professional vertical fader with VU meters
-                    SSLFaderView(value: $model.faderValue, midi: midi, model: model)
-                        .frame(width: 58)
-
-                    // 6 quick access macro buttons (3x2 grid)
-                    QuickAccessView(midi: midi)
-                }
-                .padding(10)
-                .background(
-                    LinearGradient(
-                        colors: [Color(hex: "#161616"), Color(hex: "#101010")],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color(hex: "#222222"), lineWidth: 1)
-                )
-                .cornerRadius(10)
-            } else {
-                // MACROS VIEW: Full 12-button grid (4x3)
-                FullMacrosView(midi: midi)
-                    .padding(10)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "#161616"), Color(hex: "#101010")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(Color(hex: "#222222"), lineWidth: 1)
-                    )
-                    .cornerRadius(10)
-            }
-        }
-    }
-}
-
-// =========================================================================
-// MARK: - SSL Fader: Professional Vertical Fader with VU Meters
-// =========================================================================
-// Studio-quality fader with: value display, dual VU meters, draggable knob
-// Sends MIDI CC7 (channel volume) in real-time during drag
-// =========================================================================
-
-struct SSLFaderView: View {
-    @Binding var value: Double
-    @ObservedObject var midi: MIDIManager
-    @ObservedObject var model: AppModel
-    @State private var isDragging = false
-
-    var body: some View {
-        VStack(spacing: 8) {
-            // Numeric value display (0-100) with green glow
-            Text("\(Int(value * 100))")
-                .font(.system(size: 18, weight: .regular, design: .monospaced))
-                .foregroundColor(Color(hex: "#00ff88"))
-                .shadow(color: Color(hex: "#00ff88").opacity(0.4), radius: 10)
-
-            // Dual VU meters: green → yellow → red level indicators
-            HStack(spacing: 2) {
-                VUMeterChannel(level: value, variance: 0)      // Left channel
-                VUMeterChannel(level: value, variance: 0.05)   // Right channel (slight variance)
-            }
-            .frame(height: 100) // Increased from 80
-
-            // Draggable fader track with knob
-            GeometryReader { geometry in
-                ZStack(alignment: .top) {
-                    // Dark track background with center line
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(hex: "#050505"))
-                        .shadow(color: .black.opacity(0.6), radius: 2, y: 2)
-                        .overlay(
-                            Rectangle()
-                                .fill(Color(hex: "#222222"))
-                                .frame(width: 2)
-                        )
-
-                    // Fader knob (moves vertically)
-                    FaderKnob(isDragging: isDragging)
-                        .offset(y: CGFloat((1.0 - value)) * geometry.size.height - 11)
-                }
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { gesture in
-                            isDragging = true
-                            let newValue = 1.0 - (gesture.location.y / geometry.size.height)
-                            value = min(max(newValue, 0), 1)
-                            // Send MIDI CC in real-time
-                            midi.sendCC(cc: model.ccFader, value: model.ccScaledValue())
-                        }
-                        .onEnded { _ in
-                            isDragging = false
-                        }
-                )
-            }
-            .frame(width: 32)
-
-            // "MASTER" label
-            Text("MASTER")
-                .font(.system(size: 6, weight: .semibold))
-                .tracking(1)
-                .foregroundColor(Color(hex: "#444444"))
-        }
-        .padding(8)
-        .background(Color(hex: "#0a0a0a"))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color(hex: "#1a1a1a"), lineWidth: 1)
-        )
-        .cornerRadius(6)
-    }
-}
-
-// VU Meter: Single channel with 12 segments (green → yellow → red)
-struct VUMeterChannel: View {
-    let level: Double
-    let variance: Double // Slight randomization for realistic meter
-
-    var body: some View {
-        VStack(spacing: 1) {
-            ForEach((0..<12).reversed(), id: \.self) { i in
-                let threshold = Double(i) / 12.0
-                let isActive = (level + variance) >= threshold
-                let isRed = i >= 10        // Top 2 segments: red
-                let isYellow = i >= 8 && i < 10  // Next 2: yellow
-                let color = isRed ? Color(hex: "#ff3b30") : (isYellow ? Color(hex: "#ffcc00") : Color(hex: "#00ff88"))
-
-                Rectangle()
-                    .fill(isActive ? color : Color(hex: "#1a1a1a"))
-                    .cornerRadius(1)
-                    .shadow(color: isActive ? color.opacity(0.4) : .clear, radius: 2)
-            }
-        }
-    }
-}
-
-// Fader Knob: 3D-styled draggable element with grip lines
-struct FaderKnob: View {
-    let isDragging: Bool
-
-    var body: some View {
-        VStack(spacing: 2) {
-            // Three horizontal grip lines
-            ForEach(0..<3, id: \.self) { _ in
-                Rectangle()
-                    .fill(Color.white.opacity(0.12))
-                    .frame(width: 16, height: 1)
-            }
-        }
-        .frame(width: 28, height: 22)
-        .background(
-            LinearGradient(
-                colors: isDragging ?
-                    [Color(hex: "#5a5a5a"), Color(hex: "#3a3a3a"), Color(hex: "#4a4a4a")] :
-                    [Color(hex: "#4a4a4a"), Color(hex: "#2a2a2a"), Color(hex: "#3a3a3a")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 2)
-                .stroke(Color(hex: "#555555"), lineWidth: 1)
-                .shadow(color: .white.opacity(isDragging ? 0.2 : 0.15), radius: 0, y: 1)
-        )
-        .cornerRadius(2)
-        .shadow(color: isDragging ? Color(hex: "#00ff88").opacity(0.2) : .black.opacity(0.5), radius: isDragging ? 6 : 3, y: 2)
-    }
-}
-
-// =========================================================================
-// MARK: - Quick Access Macros: 6-Button Grid (MIXER Tab)
-// =========================================================================
-// 2x3 grid of macro buttons shown alongside fader in MIXER view
-// =========================================================================
-
-struct QuickAccessView: View {
-    @ObservedObject var midi: MIDIManager
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("QUICK ACCESS")
-                .font(.system(size: 8, weight: .semibold))
-                .tracking(1.5)
-                .foregroundColor(Color(hex: "#444444"))
-
-            // 3 rows of 2 — VStack of HStacks so rows can stretch to fill height
-            VStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 8) {
-                        ForEach(0..<2, id: \.self) { col in
-                            let macro = AppModel.quickAccessMacros[row * 2 + col]
-                            MacroButton(
-                                icon: macro.icon,
-                                color: macro.color,
-                                action: {
-                                    midi.sendNoteOn(note: macro.note)
-                                    midi.sendNoteOff(note: macro.note)
-                                    if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
-                                }
-                            )
-                        }
-                    }
-                    .frame(maxHeight: .infinity)
-                }
-            }
-            .frame(maxHeight: .infinity)
-        }
-        .frame(maxHeight: .infinity)
-    }
-}
-
-// =========================================================================
-// MARK: - Full Macros Grid: 12-Button Grid (MACROS Tab)
-// =========================================================================
-// 4x3 grid of all available macro buttons (shown when MACROS tab active)
-// =========================================================================
-
-struct FullMacrosView: View {
-    @ObservedObject var midi: MIDIManager
-
-    var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 5) {
-            ForEach(AppModel.allMacros.indices, id: \.self) { i in
-                let macro = AppModel.allMacros[i]
-                MacroButton(
-                    icon: macro.icon,
-                    color: macro.color,
-                    action: {
-                        midi.sendNoteOn(note: macro.note)
-                        midi.sendNoteOff(note: macro.note)
-                        if let mmc = macro.mmc { midi.sendMMC(command: mmc) }
-                    }
-                )
-            }
-        }
-    }
-}
-
-// Individual macro button with icon and colored indicator dot
-struct MacroButton: View {
-    let icon: String
-    let color: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Icon symbol - increased size for better visibility
-                Text(icon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundColor(Color(hex: "#777777"))
-
-                // Colored indicator dot (top-right corner)
-                VStack {
-                    HStack {
-                        Spacer()
-                        Circle()
-                            .fill(Color(hex: color))
-                            .frame(width: 6, height: 6)  // Larger dot for visibility
-                            .opacity(0.7)
-                            .shadow(color: Color(hex: color).opacity(0.6), radius: 5)
-                    }
-                    Spacer()
-                }
-                .padding(5)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(minHeight: 65)  // Increased minimum height to fill space better
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "#252525"), Color(hex: "#1a1a1a")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .cornerRadius(8)
-            .shadow(color: .black.opacity(0.5), radius: 4, y: 2)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-        }
-    }
-}
-
-// =========================================================================
-// MARK: - ARM / LOOP Section: Track Recording + Loop Controls
-// =========================================================================
-// Two toggle buttons: ARM (track recording) and LOOP (loop mode)
-// Glow effects when active
-// =========================================================================
-
-struct ArmLoopSection: View {
-    @ObservedObject var midi: MIDIManager
-
-    var body: some View {
-        HStack(spacing: 8) {
-            // ARM button: Momentary CC pulse — Ableton toggles internally
-            // No latch state: UI can't know DAW arm state without MIDI input
-            ArmLoopButton(label: "ARM", color: "#ff3b30", cc: 65, midi: midi)
-            ArmLoopButton(label: "LOOP", color: "#ff9500", cc: 66, midi: midi)
-        }
-    }
-}
-
-// Momentary ARM/LOOP button — glows while pressed, no persistent active state
-struct ArmLoopButton: View {
-    let label: String
-    let color: String
-    let cc: UInt8
-    @ObservedObject var midi: MIDIManager
-    @State private var isPressed = false
-
-    var body: some View {
-        Button(action: {}) {
-            ZStack {
-                Text(label)
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(3)
-                    .foregroundColor(isPressed ? .white : Color(hex: "#555555"))
-
-                VStack {
-                    HStack {
-                        Spacer()
-                        Circle()
-                            .fill(Color(hex: color))
-                            .frame(width: 6, height: 6)
-                            .opacity(isPressed ? 1 : 0.4)
-                            .shadow(color: isPressed ? Color(hex: color) : .clear, radius: 8)
-                    }
-                    Spacer()
-                }
-                .padding(6)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 60)
-            .background(
-                isPressed ?
-                LinearGradient(
-                    colors: [Color(hex: color), Color(hex: color).opacity(0.8)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ) :
-                LinearGradient(
-                    colors: [Color(hex: "#252525"), Color(hex: "#1a1a1a")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .cornerRadius(8)
-            .shadow(color: isPressed ? Color(hex: color).opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 12 : 5, y: 4)
-        }
-        .buttonStyle(PressableButtonStyle(onPressChanged: { pressed in
-            isPressed = pressed
-            if pressed {
-                midi.sendCC(cc: cc, value: 127)
-                midi.sendCC(cc: cc, value: 0)
-            }
-        }))
-    }
-}
-
-// =========================================================================
-// MARK: - Transport Section: STOP, PLAY, RECORD Buttons
-// =========================================================================
-// Main playback controls: wide STOP on top, PLAY/REC side-by-side below
-// Glowing effects when active, MIDI notes sent on press
-// =========================================================================
-
-struct TransportSection: View {
-    @ObservedObject var model: AppModel
-    @ObservedObject var midi: MIDIManager
-    @State private var stopPressed = false
-    @State private var playPressed = false
-    @State private var recordPressed = false
-
-    var body: some View {
-        VStack(spacing: 8) {
-            // STOP button: Wide button spanning full width
-            // Only glows yellow while being pressed
-            TransportStopButton(
-                isStopped: stopPressed,
-                onPressChanged: { isPressed in
-                    stopPressed = isPressed
-                    if isPressed {
-                        midi.sendNoteOn(note: model.noteStop)
-                        midi.sendNoteOff(note: model.noteStop)
-                        midi.sendMMC(command: 0x01)
-                    }
-                }
-            )
-            .frame(height: 64)
-
-            // PLAY and RECORD buttons: Side by side below STOP
-            HStack(spacing: 8) {
-                TransportPlayButton(
-                    isPressed: playPressed,
-                    onPressChanged: { isPressed in
-                        playPressed = isPressed
-                        if isPressed {
-                            midi.sendNoteOn(note: model.notePlay)
-                            midi.sendNoteOff(note: model.notePlay)
-                            midi.sendMMC(command: 0x02)
-                        }
-                    }
-                )
-
-                TransportRecordButton(
-                    isPressed: recordPressed,
-                    onPressChanged: { isPressed in
-                        recordPressed = isPressed
-                        if isPressed {
-                            midi.sendNoteOn(note: model.noteRecord)
-                            midi.sendNoteOff(note: model.noteRecord)
-                            midi.sendMMC(command: 0x06)
-                        }
-                    }
-                )
-            }
-            .frame(height: 120)
-        }
-        .padding(10)
-        .background(
-            LinearGradient(
-                colors: [Color(hex: "#141414"), Color(hex: "#0a0a0a")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(hex: "#222222"), lineWidth: 1)
-        )
-        .cornerRadius(14)
-    }
-}
-
-// STOP button: Yellow when pressed (momentary)
-struct TransportStopButton: View {
-    let isStopped: Bool
-    let onPressChanged: (Bool) -> Void
-
-    var body: some View {
-        Button(action: {}) {
-            HStack(spacing: 10) {
-                Text("■")
-                    .font(.system(size: 22))
-                    .foregroundColor(isStopped ? .black : Color(hex: "#ffcc00").opacity(0.4))
-
-                Text("STOP")
-                    .font(.system(size: 14, weight: .bold))
-                    .tracking(4)
-                    .foregroundColor(isStopped ? .black : Color(hex: "#ffcc00").opacity(0.4))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                isStopped ?
-                LinearGradient(
-                    colors: [Color(hex: "#ffcc00"), Color(hex: "#e6b800")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ) :
-                LinearGradient(
-                    colors: [Color(hex: "#2a2a2a"), Color(hex: "#1e1e1e")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isStopped ? Color.clear : Color(hex: "#ffcc00").opacity(0.15), lineWidth: 1)
-            )
-            .cornerRadius(10)
-            .shadow(color: isStopped ? Color(hex: "#ffcc00").opacity(0.4) : .black.opacity(0.4), radius: isStopped ? 15 : 6, y: 4)
-        }
-        .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
-    }
-}
-
-// Custom button style to detect press/release
-struct PressableButtonStyle: ButtonStyle {
-    let onPressChanged: (Bool) -> Void
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .onChange(of: configuration.isPressed) { isPressed in
-                onPressChanged(isPressed)
+        CtrlrV2View(midi: midi, model: model, showDevicePicker: $showDevicePicker)
+            .sheet(isPresented: $showDevicePicker) {
+                DevicePickerView(midi: midi, isPresented: $showDevicePicker)
             }
     }
 }
 
-// PLAY button: Green while pressed (momentary — no persistent state without DAW feedback)
-struct TransportPlayButton: View {
-    let isPressed: Bool
-    let onPressChanged: (Bool) -> Void
-
-    var body: some View {
-        Button(action: {}) {
-            VStack(spacing: 6) {
-                Text("▶")
-                    .font(.system(size: 36))
-                    .foregroundColor(isPressed ? .black : Color(hex: "#00ff88").opacity(0.35))
-                    .padding(.leading, 4)
-
-                Text("PLAY")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(3)
-                    .foregroundColor(isPressed ? .black : Color(hex: "#00ff88").opacity(0.35))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                isPressed ?
-                LinearGradient(
-                    colors: [Color(hex: "#00ff88"), Color(hex: "#00dd77")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ) :
-                LinearGradient(
-                    colors: [Color(hex: "#2a2a2a"), Color(hex: "#1e1e1e")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isPressed ? Color.clear : Color(hex: "#00ff88").opacity(0.15), lineWidth: 1)
-            )
-            .cornerRadius(10)
-            .shadow(color: isPressed ? Color(hex: "#00ff88").opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 17 : 8, y: 6)
-        }
-        .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
-    }
-}
-
-// RECORD button: Red while pressed (momentary — no persistent state without DAW feedback)
-struct TransportRecordButton: View {
-    let isPressed: Bool
-    let onPressChanged: (Bool) -> Void
-
-    var body: some View {
-        Button(action: {}) {
-            VStack(spacing: 6) {
-                Text("●")
-                    .font(.system(size: 32))
-                    .foregroundColor(isPressed ? .white : Color(hex: "#ff3b30").opacity(0.35))
-
-                Text("REC")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(3)
-                    .foregroundColor(isPressed ? .white : Color(hex: "#ff3b30").opacity(0.35))
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                isPressed ?
-                LinearGradient(
-                    colors: [Color(hex: "#ff3b30"), Color(hex: "#dd3328")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ) :
-                LinearGradient(
-                    colors: [Color(hex: "#2a2a2a"), Color(hex: "#1e1e1e")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(isPressed ? Color.clear : Color(hex: "#ff3b30").opacity(0.15), lineWidth: 1)
-            )
-            .cornerRadius(10)
-            .shadow(color: isPressed ? Color(hex: "#ff3b30").opacity(0.5) : .black.opacity(0.4), radius: isPressed ? 17 : 8, y: 6)
-        }
-        .buttonStyle(PressableButtonStyle(onPressChanged: onPressChanged))
-    }
-}
-
-// =========================================================================
-// MARK: - Console Branding: Silk-screen style label at bottom
-// =========================================================================
-// "CTRLR" in Digital Dismay font — mimics hardware console panel labeling.
-// Requires DigitalDismay.ttf in Sources/ and UIAppFonts in Info.plist.
-// =========================================================================
-
-struct ConsoleBranding: View {
-    var body: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 10) {
-                Rectangle()
-                    .fill(Color.white.opacity(0.5))
-                    .frame(height: 0.6)
-
-                Text("CTRLR")
-                    .font(.custom("DigitalDismay", size: 25))
-                    .tracking(8)
-                    .foregroundColor(Color.white.opacity(0.250))
-                    .fixedSize()
-                    .scaleEffect(x: 1.75, y: 1.0, anchor: .center)
-                    .padding(.horizontal, 60)
-
-                Rectangle()
-                    .fill(Color.white.opacity(0.5))
-                    .frame(height: 0.6)
-            }
-
-        }
-        .padding(.horizontal, 26)
-        .padding(.top, 10)
-        .padding(.bottom, 15)
-    }
-}
-
-
-// =========================================================================
-// MARK: - Home Indicator: iPhone Gesture Bar
-// =========================================================================
-// MARK: - Device Picker Sheet: Select MIDI Destination
-// =========================================================================
-// Modal sheet that displays all available MIDI destinations
-// User can tap to select and connect to a specific device
-// =========================================================================
+// MARK: - Device Picker Sheet
 
 struct DevicePickerView: View {
     @ObservedObject var midi: MIDIManager
@@ -901,16 +25,13 @@ struct DevicePickerView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Dark background
-                Color(hex: "#0c0c0c")
-                    .ignoresSafeArea()
+                Color(hex: "#0c0c0c").ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     if midi.destinations.isEmpty {
                         SetupGuideView(midi: midi)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        // Device list
                         List {
                             ForEach(midi.destinations, id: \.self) { destination in
                                 DeviceRow(
@@ -927,11 +48,9 @@ struct DevicePickerView: View {
                         .scrollContentBackground(.hidden)
                     }
 
-                    // Diagnostic footer
                     VStack(spacing: 0) {
                         Divider()
 
-                        // Network status
                         VStack(alignment: .leading, spacing: 0) {
                             Text("NETWORK")
                                 .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -948,12 +67,10 @@ struct DevicePickerView: View {
                                           isOK: midi.companionConnected)
                             DiagnosticRow(label: "IP", value: midi.localIP,
                                           isOK: midi.localIP != "—")
-                            DiagnosticRow(label: "IN", value: "\(midi.incomingCount)",
-                                          isOK: nil)
+                            DiagnosticRow(label: "IN", value: "\(midi.incomingCount)", isOK: nil)
                         }
                         .padding(.horizontal, 16)
 
-                        // MIDI status
                         VStack(alignment: .leading, spacing: 0) {
                             Text("MIDI")
                                 .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -990,9 +107,7 @@ struct DevicePickerView: View {
                                 .cornerRadius(10)
                             }
 
-                            Button(action: {
-                                UIPasteboard.general.string = midi.diagnosticText
-                            }) {
+                            Button(action: { UIPasteboard.general.string = midi.diagnosticText }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "doc.on.doc")
                                         .font(.system(size: 12, weight: .semibold))
@@ -1021,10 +136,8 @@ struct DevicePickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        isPresented = false
-                    }
-                    .foregroundColor(Color(hex: "#ff6b35"))
+                    Button("Done") { isPresented = false }
+                        .foregroundColor(Color(hex: "#ff6b35"))
                 }
             }
         }
@@ -1032,7 +145,8 @@ struct DevicePickerView: View {
     }
 }
 
-// Individual device row with selection indicator
+// MARK: - Device Row
+
 struct DeviceRow: View {
     let name: String
     let isSelected: Bool
@@ -1041,20 +155,14 @@ struct DeviceRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                // Device icon
                 Image(systemName: "cable.connector")
                     .font(.system(size: 20))
                     .foregroundColor(isSelected ? Color(hex: "#00ff88") : Color(hex: "#666666"))
                     .frame(width: 32)
-
-                // Device name
                 Text(name)
                     .font(.system(size: 16))
                     .foregroundColor(.white)
-
                 Spacer()
-
-                // Selection checkmark
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 20))
@@ -1063,23 +171,14 @@ struct DeviceRow: View {
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
-            .background(
-                isSelected ?
-                Color(hex: "#00ff88").opacity(0.08) :
-                Color.clear
-            )
+            .background(isSelected ? Color(hex: "#00ff88").opacity(0.08) : Color.clear)
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
     }
 }
 
-// =========================================================================
-// MARK: - Setup Guide: Step-by-step WiFi MIDI connection instructions
-// =========================================================================
-// Shown in DevicePickerView when no MIDI destinations are found.
-// Guides the user through the one-time Audio MIDI Setup step on Mac.
-// =========================================================================
+// MARK: - Setup Guide
 
 struct SetupGuideView: View {
     @ObservedObject var midi: MIDIManager
@@ -1092,17 +191,15 @@ struct SetupGuideView: View {
     }
 
     private let steps: [Step] = [
-        Step(number: 1, title: "Same WiFi",        detail: "Connect your iPhone and Mac to the same WiFi network.",                                      color: "#00d4ff"),
-        Step(number: 2, title: "Audio MIDI Setup", detail: "On your Mac, open:\nApplications → Utilities → Audio MIDI Setup",                            color: "#ff6b35"),
-        Step(number: 3, title: "MIDI Studio",      detail: "Go to Window → Show MIDI Studio.\nClick the Network icon in the toolbar.",                   color: "#ffcc00"),
-        Step(number: 4, title: "Connect",          detail: "Find \"Ctrlr\" in the Directory list on the left.\nClick Connect — you're done.",             color: "#00ff88"),
+        Step(number: 1, title: "Same WiFi",        detail: "Connect your iPhone and Mac to the same WiFi network.",                         color: "#00d4ff"),
+        Step(number: 2, title: "Audio MIDI Setup", detail: "On your Mac, open:\nApplications → Utilities → Audio MIDI Setup",              color: "#ff6b35"),
+        Step(number: 3, title: "MIDI Studio",      detail: "Go to Window → Show MIDI Studio.\nClick the Network icon in the toolbar.",     color: "#ffcc00"),
+        Step(number: 4, title: "Connect",          detail: "Find \"Ctrlr\" in the Directory list.\nClick Connect — you're done.",          color: "#00ff88"),
     ]
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-
-                // Header
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
                         Image(systemName: "wifi")
@@ -1129,11 +226,9 @@ struct SetupGuideView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 20)
 
-                // Steps
                 VStack(spacing: 0) {
                     ForEach(steps, id: \.number) { step in
                         HStack(alignment: .top, spacing: 14) {
-                            // Numbered circle
                             ZStack {
                                 Circle()
                                     .fill(Color(hex: step.color).opacity(0.15))
@@ -1142,8 +237,6 @@ struct SetupGuideView: View {
                                     .font(.system(size: 13, weight: .bold, design: .monospaced))
                                     .foregroundColor(Color(hex: step.color))
                             }
-
-                            // Step content
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(step.title)
                                     .font(.system(size: 13, weight: .semibold))
@@ -1154,14 +247,12 @@ struct SetupGuideView: View {
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                             .padding(.bottom, 20)
-
                             Spacer()
                         }
                         .padding(.horizontal, 20)
                     }
                 }
 
-                // Advertising status
                 HStack(spacing: 8) {
                     Circle()
                         .fill(Color(hex: "#00ff88"))
@@ -1174,12 +265,10 @@ struct SetupGuideView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
 
-                // Refresh button
                 Button(action: { midi.refreshDestinations() }) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.clockwise")
-                        Text("REFRESH DEVICES")
-                            .tracking(1)
+                        Text("REFRESH DEVICES").tracking(1)
                     }
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
@@ -1195,14 +284,12 @@ struct SetupGuideView: View {
     }
 }
 
-// =========================================================================
 // MARK: - Diagnostic Row
-// =========================================================================
 
 struct DiagnosticRow: View {
     let label: String
     let value: String
-    let isOK: Bool?  // nil = neutral (no indicator logic)
+    let isOK: Bool?
 
     var body: some View {
         HStack(spacing: 6) {
@@ -1210,10 +297,8 @@ struct DiagnosticRow: View {
                 .fill(dotColor)
                 .frame(width: 5, height: 5)
                 .shadow(color: isOK == true ? dotColor.opacity(0.6) : .clear, radius: 3)
-            Text(label)
-                .foregroundColor(Color(hex: "#555555"))
-            Text(value)
-                .foregroundColor(Color(hex: "#999999"))
+            Text(label).foregroundColor(Color(hex: "#555555"))
+            Text(value).foregroundColor(Color(hex: "#999999"))
             Spacer()
         }
         .font(.system(size: 10, design: .monospaced))
@@ -1229,73 +314,16 @@ struct DiagnosticRow: View {
     }
 }
 
-// =========================================================================
 // MARK: - Previews
-// =========================================================================
 
 #if DEBUG
-
-/// Full app — use this to preview the complete layout end-to-end
-#Preview("Full App") {
-    ContentView()
+#Preview("Full App") { ContentView() }
+#Preview("V2 View") {
+    CtrlrV2View(midi: MIDIManager(), model: AppModel(), showDevicePicker: .constant(false))
 }
-
-/// Isolated branding label — tweak font size, tracking, opacity here
-#Preview("Console Branding") {
-    ZStack {
-        Color(hex: "#0c0c0c").ignoresSafeArea()
-        VStack {
-            Spacer()
-            ConsoleBranding()
-        }
-    }
-}
-
-/// Transport controls in isolation
-#Preview("Transport") {
-    ZStack {
-        Color(hex: "#0c0c0c").ignoresSafeArea()
-        TransportSection(model: AppModel(), midi: MIDIManager())
-            .padding(.horizontal, 10)
-    }
-}
-
-/// ARM / LOOP buttons — momentary, no persistent state
-#Preview("Arm Loop") {
-    ZStack {
-        Color(hex: "#0c0c0c").ignoresSafeArea()
-        ArmLoopSection(midi: MIDIManager())
-            .padding(.horizontal, 10)
-    }
-}
-
-/// MIXER tab content — fader + quick access macros
-#Preview("Mixer Tab") {
-    ZStack {
-        Color(hex: "#0c0c0c").ignoresSafeArea()
-        MainContentArea(activeTab: .mixer, model: AppModel(), midi: MIDIManager())
-            .padding(.horizontal, 10)
-            .frame(height: 280)
-    }
-}
-
-/// MACROS tab content — full 12-button grid
-#Preview("Macros Tab") {
-    ZStack {
-        Color(hex: "#0c0c0c").ignoresSafeArea()
-        MainContentArea(activeTab: .macros, model: AppModel(), midi: MIDIManager())
-            .padding(.horizontal, 10)
-            .frame(height: 280)
-    }
-}
-
 #endif
 
-// =========================================================================
-// MARK: - Color Extension: Hex String to SwiftUI Color
-// =========================================================================
-// Utility to create Color from hex strings like "#ff0000"
-// =========================================================================
+// MARK: - Color Extension
 
 extension Color {
     init(hex: String) {
@@ -1304,22 +332,15 @@ extension Color {
         Scanner(string: hex).scanHexInt64(&int)
         let a, r, g, b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
+        case 3:  (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:  (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:  (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default: (a, r, g, b) = (1, 1, 1, 0)
         }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
+        self.init(.sRGB,
+                  red:     Double(r) / 255,
+                  green:   Double(g) / 255,
+                  blue:    Double(b) / 255,
+                  opacity: Double(a) / 255)
     }
 }

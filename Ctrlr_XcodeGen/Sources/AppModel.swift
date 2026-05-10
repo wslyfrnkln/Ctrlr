@@ -51,4 +51,22 @@ struct MacroDef {
         MacroDef(icon: "⬟", color: "#f39c12", note: 79, name: "OPTIONS",  mmc: nil),
         MacroDef(icon: "✦", color: "#1abc9c", note: 80, name: "FAVORITE", mmc: nil),
     ]
+
+    // v2.1 named CC macros (FILTER, RESO, etc.)
+    struct V2Macro {
+        let id: String
+        let label: String
+        let cc: UInt8
+    }
+
+    static let v2Macros: [V2Macro] = [
+        V2Macro(id: "A", label: "FILTER", cc: 21),
+        V2Macro(id: "B", label: "RESO",   cc: 22),
+        V2Macro(id: "C", label: "DELAY",  cc: 23),
+        V2Macro(id: "D", label: "REVERB", cc: 24),
+        V2Macro(id: "E", label: "DRIVE",  cc: 25),
+        V2Macro(id: "F", label: "PITCH",  cc: 26),
+        V2Macro(id: "G", label: "CHORUS", cc: 27),
+        V2Macro(id: "H", label: "LFO",    cc: 28),
+    ]
 }
