@@ -5,6 +5,12 @@ import ServiceManagement
 struct CtrlrHelperApp: App {
     @StateObject private var manager = ConnectionManager()
 
+    init() {
+        if SMAppService.mainApp.status == .notRegistered {
+            try? SMAppService.mainApp.register()
+        }
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarContent(manager: manager)
@@ -21,7 +27,7 @@ struct CtrlrHelperApp: App {
 
 struct MenuBarContent: View {
     @ObservedObject var manager: ConnectionManager
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled || SMAppService.mainApp.status == .requiresApproval
     @AppStorage("selectedDAW") private var selectedDAW = "ableton"
     @State private var scriptInstalled = ScriptInstaller.isInstalled
     @State private var installError: String? = nil

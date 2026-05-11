@@ -16,6 +16,14 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Design tokens (sheet)
+
+private let sheetBg     = Color(hex: "#e8e4dc")
+private let sheetInk    = Color(hex: "#1a1a1a")
+private let sheetSub    = Color(hex: "#1a1a1a").opacity(0.45)
+private let sheetHair   = Color(hex: "#1a1a1a").opacity(0.15)
+private let sheetAccent = Color(hex: "#ff5b14")
+
 // MARK: - Device Picker Sheet
 
 struct DevicePickerView: View {
@@ -25,7 +33,7 @@ struct DevicePickerView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color(hex: "#0c0c0c").ignoresSafeArea()
+                sheetBg.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     if midi.destinations.isEmpty {
@@ -43,19 +51,19 @@ struct DevicePickerView: View {
                                     }
                                 )
                             }
-                            .listRowBackground(Color(hex: "#161616"))
+                            .listRowBackground(sheetBg)
                         }
                         .scrollContentBackground(.hidden)
                     }
 
                     VStack(spacing: 0) {
-                        Divider()
+                        Divider().overlay(sheetHair)
 
                         VStack(alignment: .leading, spacing: 0) {
                             Text("NETWORK")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .tracking(1.5)
-                                .foregroundColor(Color(hex: "#555555"))
+                                .font(.system(size: 8, weight: .regular, design: .monospaced))
+                                .tracking(3)
+                                .foregroundColor(sheetSub)
                                 .padding(.top, 10)
                                 .padding(.bottom, 4)
 
@@ -65,17 +73,17 @@ struct DevicePickerView: View {
                                           isOK: midi.serviceDebug != "not registered" && midi.serviceDebug != "removed")
                             DiagnosticRow(label: "MAC", value: midi.companionDebug,
                                           isOK: midi.companionConnected)
-                            DiagnosticRow(label: "IP", value: midi.localIP,
+                            DiagnosticRow(label: "IP",  value: midi.localIP,
                                           isOK: midi.localIP != "—")
-                            DiagnosticRow(label: "IN", value: "\(midi.incomingCount)", isOK: nil)
+                            DiagnosticRow(label: "IN",  value: "\(midi.incomingCount)", isOK: nil)
                         }
                         .padding(.horizontal, 16)
 
                         VStack(alignment: .leading, spacing: 0) {
                             Text("MIDI")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .tracking(1.5)
-                                .foregroundColor(Color(hex: "#555555"))
+                                .font(.system(size: 8, weight: .regular, design: .monospaced))
+                                .tracking(3)
+                                .foregroundColor(sheetSub)
                                 .padding(.top, 8)
                                 .padding(.bottom, 4)
 
@@ -87,49 +95,48 @@ struct DevicePickerView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 8)
 
-                        HStack(spacing: 12) {
+                        HStack(spacing: 8) {
                             Button(action: { midi.reconnect() }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "arrow.clockwise")
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text("RESTART ALL")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .tracking(1)
+                                        .font(.system(size: 11, weight: .semibold))
+                                    Text("RESTART")
+                                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                        .tracking(1.5)
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(sheetInk)
                                 .frame(maxWidth: .infinity)
-                                .padding(.vertical, 14)
-                                .background(Color(hex: "#00d4ff").opacity(0.15))
+                                .padding(.vertical, 12)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color(hex: "#00d4ff").opacity(0.4), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(sheetInk.opacity(0.3), lineWidth: 1)
                                 )
-                                .cornerRadius(10)
+                                .cornerRadius(8)
                             }
 
                             Button(action: { UIPasteboard.general.string = midi.diagnosticText }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "doc.on.doc")
-                                        .font(.system(size: 12, weight: .semibold))
+                                        .font(.system(size: 11, weight: .semibold))
                                     Text("COPY")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .tracking(1)
+                                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                        .tracking(1.5)
                                 }
-                                .foregroundColor(.white)
-                                .padding(.vertical, 14)
+                                .foregroundColor(sheetSub)
+                                .padding(.vertical, 12)
                                 .padding(.horizontal, 20)
-                                .background(Color(hex: "#333333").opacity(0.5))
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color(hex: "#444444"), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(sheetHair, lineWidth: 1)
                                 )
-                                .cornerRadius(10)
+                                .cornerRadius(8)
                             }
                         }
+                        .buttonStyle(.plain)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
                     }
-                    .background(Color(hex: "#0c0c0c"))
+                    .background(sheetBg)
                 }
             }
             .navigationTitle("MIDI Devices")
@@ -137,11 +144,11 @@ struct DevicePickerView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { isPresented = false }
-                        .foregroundColor(Color(hex: "#ff6b35"))
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .foregroundColor(sheetAccent)
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
 
@@ -156,22 +163,22 @@ struct DeviceRow: View {
         Button(action: action) {
             HStack {
                 Image(systemName: "cable.connector")
-                    .font(.system(size: 20))
-                    .foregroundColor(isSelected ? Color(hex: "#00ff88") : Color(hex: "#666666"))
-                    .frame(width: 32)
-                Text(name)
                     .font(.system(size: 16))
-                    .foregroundColor(.white)
+                    .foregroundColor(isSelected ? sheetAccent : sheetSub)
+                    .frame(width: 28)
+                Text(name)
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundColor(sheetInk)
                 Spacer()
                 if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(Color(hex: "#00ff88"))
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(sheetAccent)
                 }
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
-            .background(isSelected ? Color(hex: "#00ff88").opacity(0.08) : Color.clear)
+            .background(isSelected ? sheetAccent.opacity(0.06) : Color.clear)
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -187,96 +194,82 @@ struct SetupGuideView: View {
         let number: Int
         let title: String
         let detail: String
-        let color: String
     }
 
     private let steps: [Step] = [
-        Step(number: 1, title: "Same WiFi",        detail: "Connect your iPhone and Mac to the same WiFi network.",                         color: "#00d4ff"),
-        Step(number: 2, title: "Audio MIDI Setup", detail: "On your Mac, open:\nApplications → Utilities → Audio MIDI Setup",              color: "#ff6b35"),
-        Step(number: 3, title: "MIDI Studio",      detail: "Go to Window → Show MIDI Studio.\nClick the Network icon in the toolbar.",     color: "#ffcc00"),
-        Step(number: 4, title: "Connect",          detail: "Find \"Ctrlr\" in the Directory list.\nClick Connect — you're done.",          color: "#00ff88"),
+        Step(number: 1, title: "Same WiFi",          detail: "Connect your iPhone and Mac to the same network."),
+        Step(number: 2, title: "Install Helper",      detail: "Download and open Ctrlr Helper on your Mac."),
+        Step(number: 3, title: "You're done",         detail: "Helper auto-connects. Open Ctrlr — it appears here."),
     ]
 
     var body: some View {
-        ScrollView {
+        ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "wifi")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: "#00d4ff"))
-                        Text("WIFI MIDI")
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(2)
-                            .foregroundColor(Color(hex: "#00d4ff"))
-                        Text("RECOMMENDED")
-                            .font(.system(size: 8, weight: .bold))
-                            .tracking(1.5)
-                            .foregroundColor(Color(hex: "#00d4ff").opacity(0.5))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(hex: "#00d4ff").opacity(0.1))
-                            .cornerRadius(3)
-                    }
-                    Text("One-time setup on your Mac. Reconnects automatically.")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "#666666"))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("SETUP")
+                        .font(.system(size: 8, weight: .regular, design: .monospaced))
+                        .tracking(4)
+                        .foregroundColor(sheetSub)
+                    Text("Connect to Mac")
+                        .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                        .foregroundColor(sheetInk)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 20)
+                .padding(.top, 28)
+                .padding(.bottom, 28)
 
                 VStack(spacing: 0) {
                     ForEach(steps, id: \.number) { step in
                         HStack(alignment: .top, spacing: 14) {
                             ZStack {
-                                Circle()
-                                    .fill(Color(hex: step.color).opacity(0.15))
-                                    .frame(width: 32, height: 32)
+                                RoundedRectangle(cornerRadius: 5)
+                                    .stroke(step.number == 3 ? sheetAccent : sheetHair, lineWidth: 1)
+                                    .frame(width: 28, height: 28)
                                 Text("\(step.number)")
-                                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color(hex: step.color))
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(step.number == 3 ? sheetAccent : sheetSub)
                             }
-                            VStack(alignment: .leading, spacing: 4) {
+
+                            VStack(alignment: .leading, spacing: 3) {
                                 Text(step.title)
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(sheetInk)
                                 Text(step.detail)
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color(hex: "#888888"))
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundColor(sheetSub)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(.bottom, 20)
+                            .padding(.bottom, 24)
+
                             Spacer()
                         }
                         .padding(.horizontal, 20)
                     }
                 }
 
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(Color(hex: "#00ff88"))
-                        .frame(width: 6, height: 6)
-                        .shadow(color: Color(hex: "#00ff88"), radius: 6)
-                    Text("Advertising as \"Ctrlr\" on your network")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(hex: "#555555"))
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                Divider()
+                    .overlay(sheetHair)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
 
                 Button(action: { midi.refreshDestinations() }) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.clockwise")
-                        Text("REFRESH DEVICES").tracking(1)
+                        Text("REFRESH")
+                            .tracking(2)
                     }
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundColor(sheetInk)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color(hex: "#ff6b35"))
-                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(sheetInk, lineWidth: 1.5)
+                    )
+                    .cornerRadius(8)
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 32)
             }
@@ -295,10 +288,9 @@ struct DiagnosticRow: View {
         HStack(spacing: 6) {
             Circle()
                 .fill(dotColor)
-                .frame(width: 5, height: 5)
-                .shadow(color: isOK == true ? dotColor.opacity(0.6) : .clear, radius: 3)
-            Text(label).foregroundColor(Color(hex: "#555555"))
-            Text(value).foregroundColor(Color(hex: "#999999"))
+                .frame(width: 4, height: 4)
+            Text(label).foregroundColor(sheetSub)
+            Text(value).foregroundColor(sheetInk.opacity(0.6))
             Spacer()
         }
         .font(.system(size: 10, design: .monospaced))
@@ -307,9 +299,9 @@ struct DiagnosticRow: View {
 
     private var dotColor: Color {
         switch isOK {
-        case .some(true):  return Color(hex: "#00ff88")
-        case .some(false): return Color(hex: "#ff4444")
-        case .none:        return Color(hex: "#444444")
+        case .some(true):  return sheetAccent
+        case .some(false): return Color(hex: "#cc3333")
+        case .none:        return sheetHair
         }
     }
 }
