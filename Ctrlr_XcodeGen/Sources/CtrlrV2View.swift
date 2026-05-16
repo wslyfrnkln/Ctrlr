@@ -4,7 +4,7 @@ import SwiftUI
 
 private let cream    = Color(hex: "#e8e4dc")
 private let ink      = Color(hex: "#1a1a1a")
-private let sub      = Color(hex: "#1a1a1a").opacity(0.55)
+private let sub      = Color(hex: "#1a1a1a").opacity(0.72)
 private let hair     = Color(hex: "#1a1a1a").opacity(0.18)
 private let accent   = Color(hex: "#ff5b14")
 private let mono     = Font.system(.body, design: .monospaced)
@@ -21,9 +21,9 @@ struct CtrlrV2View: View {
             cream.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 14) {
+                VStack(spacing: 10) {
                     V2Header(midi: midi, showDevicePicker: $showDevicePicker)
-                        .padding(.top, 20)
+                        .padding(.top, 2)
 
                     TrackCardView()
 
@@ -41,7 +41,8 @@ struct CtrlrV2View: View {
                         .font(.system(size: 9, weight: .regular, design: .monospaced))
                         .tracking(4)
                         .foregroundColor(sub)
-                        .padding(.bottom, 96)
+                        .padding(.bottom, 16)
+                        .accessibilityHidden(true)
                 }
                 .padding(.horizontal, 20)
             }
@@ -58,21 +59,21 @@ private struct V2Header: View {
     var body: some View {
         HStack {
             HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 5)
+                RoundedRectangle(cornerRadius: 7)
                     .fill(accent)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 30, height: 30)
                     .overlay(
                         Text("C")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                            .font(.system(size: 17, weight: .bold, design: .monospaced))
+                            .foregroundColor(ink)
                     )
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("ctrlr")
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 17, weight: .semibold, design: .monospaced))
                         .foregroundColor(ink)
                     Text("MIDI · v2.0")
-                        .font(.system(size: 7, weight: .regular, design: .monospaced))
+                        .font(.system(size: 9, weight: .regular, design: .monospaced))
                         .tracking(2)
                         .foregroundColor(sub)
                         .textCase(.uppercase)
@@ -83,14 +84,18 @@ private struct V2Header: View {
 
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(hex: "#2cb67d"))
+                    .fill(midi.companionConnected ? Color(hex: "#2cb67d") : ink.opacity(0.25))
                     .frame(width: 5, height: 5)
-                Text("USB · OP-Z")
+                Text(midi.selectedDestination != nil ? midi.selectedDestinationName : "No Device")
                     .font(.system(size: 9, weight: .regular, design: .monospaced))
                     .tracking(2)
                     .foregroundColor(sub)
                     .textCase(.uppercase)
             }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .accessibilityLabel("MIDI connection status")
+            .accessibilityHint("Tap to open device picker")
             .onTapGesture {
                 midi.refreshDestinations()
                 showDevicePicker = true
@@ -359,6 +364,15 @@ private struct RotaryJogView: View {
                     dragStartY = nil
                 }
         )
+        .accessibilityLabel("Volume")
+        .accessibilityValue("\(Int(value * 100))")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: value = min(1, value + 0.01)
+            case .decrement: value = max(0, value - 0.01)
+            default: break
+            }
+        }
     }
 }
 
@@ -397,6 +411,15 @@ private struct MiniFaderView: View {
                         value = max(0, min(1, v))
                     }
             )
+            .accessibilityLabel("Master fader")
+            .accessibilityValue("\(Int(value * 100))")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: value = min(1, value + 0.01)
+                case .decrement: value = max(0, value - 0.01)
+                default: break
+                }
+            }
         }
     }
 }
@@ -474,12 +497,15 @@ private struct V2MacroButton: View {
             .background(isActive ? accent.opacity(0.08) : Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(isActive ? accent : hair, lineWidth: 1)
+                    .stroke(isActive ? accent : ink.opacity(0.25), lineWidth: 1)
             )
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.1), value: isActive)
+        .accessibilityLabel("\(macro.label) macro, CC \(macro.cc)")
+        .accessibilityHint(isActive ? "Active. Tap to deactivate" : "Tap to send CC \(macro.cc)")
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -489,24 +515,71 @@ private struct V2RecStopRow: View {
     @ObservedObject var model: AppModel
     @ObservedObject var midi: MIDIManager
     @State private var recording = false
-    @State private var playing   = false
+    @State private var stopFlash = false
 
     var body: some View {
         HStack(spacing: 6) {
-            transportBtn(label: "REC", sfSymbol: "circle.fill",
-                         active: recording, color: Color(hex: "#e63946")) {
+            // REC — toggles red fill like PLAY toggles accent fill
+            Button(action: {
                 recording.toggle()
                 midi.sendNoteOn(note: model.noteRecord)
                 midi.sendNoteOff(note: model.noteRecord)
                 midi.sendMMC(command: 0x06)
+            }) {
+                HStack(spacing: 10) {
+                    Image(systemName: "circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("REC")
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .tracking(2)
+                }
+                .foregroundColor(recording ? .white : Color(hex: "#e63946"))
+                .frame(maxWidth: .infinity)
+                .frame(height: 64)
+                .background(recording ? Color(hex: "#e63946") : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(recording ? Color(hex: "#e63946") : ink.opacity(0.35), lineWidth: 1.5)
+                )
+                .cornerRadius(10)
             }
-            transportBtn(label: "STOP", sfSymbol: "stop.fill",
-                         active: false, color: ink) {
-                playing = false; recording = false
+            .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.14), value: recording)
+            .accessibilityLabel("REC")
+            .accessibilityHint("Sends MIDI record command to DAW")
+
+            // STOP — momentary yellow flash, always returns to idle
+            Button(action: {
+                recording = false
+                stopFlash = true
                 midi.sendNoteOn(note: model.noteStop)
                 midi.sendNoteOff(note: model.noteStop)
                 midi.sendMMC(command: 0x01)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                    stopFlash = false
+                }
+            }) {
+                HStack(spacing: 10) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("STOP")
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .tracking(2)
+                }
+                .foregroundColor(stopFlash ? ink : ink)
+                .frame(maxWidth: .infinity)
+                .frame(height: 64)
+                .background(stopFlash ? Color(hex: "#f59e0b") : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(stopFlash ? Color(hex: "#f59e0b") : ink.opacity(0.35), lineWidth: 1.5)
+                )
+                .cornerRadius(10)
             }
+            .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.08), value: stopFlash)
+            .accessibilityLabel("STOP")
+            .accessibilityHint("Sends MIDI stop command to DAW")
         }
     }
 }
@@ -520,12 +593,14 @@ private struct V2LoopArmRow: View {
     var body: some View {
         HStack(spacing: 6) {
             transportBtn(label: "LOOP", sfSymbol: "repeat",
-                         active: looping, color: Color(hex: "#f59e0b")) {
+                         active: looping, color: accent,
+                         hint: "Toggles loop mode in DAW") {
                 looping.toggle()
                 midi.sendCC(cc: 66, value: looping ? 127 : 0)
             }
             transportBtn(label: "ARM", sfSymbol: "record.circle",
-                         active: armed, color: Color(hex: "#e63946")) {
+                         active: armed, color: Color(hex: "#e63946"),
+                         hint: "Arms selected track for recording") {
                 armed.toggle()
                 midi.sendCC(cc: 65, value: armed ? 127 : 0)
             }
@@ -535,6 +610,7 @@ private struct V2LoopArmRow: View {
 
 private func transportBtn(label: String, sfSymbol: String,
                            active: Bool, color: Color,
+                           hint: String = "",
                            action: @escaping () -> Void) -> some View {
     Button(action: action) {
         VStack(spacing: 5) {
@@ -547,16 +623,18 @@ private func transportBtn(label: String, sfSymbol: String,
                 .foregroundColor(active ? color : sub)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 36)
+        .frame(height: 44)
         .background(active ? color.opacity(0.08) : Color.clear)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(active ? color : hair, lineWidth: 1)
+                .stroke(active ? color : ink.opacity(0.35), lineWidth: 1.5)
         )
         .cornerRadius(8)
     }
     .buttonStyle(.plain)
     .animation(.easeInOut(duration: 0.1), value: active)
+    .accessibilityLabel(label)
+    .accessibilityHint(hint)
 }
 
 
@@ -592,5 +670,8 @@ private struct V2PlayButton: View {
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.14), value: playing)
+        .accessibilityLabel(playing ? "Pause" : "Play")
+        .accessibilityHint(playing ? "Sends MIDI pause command to DAW" : "Sends MIDI play command to DAW")
+        .accessibilityAddTraits(.isButton)
     }
 }

@@ -20,7 +20,7 @@ struct ContentView: View {
 
 private let sheetBg     = Color(hex: "#e8e4dc")
 private let sheetInk    = Color(hex: "#1a1a1a")
-private let sheetSub    = Color(hex: "#1a1a1a").opacity(0.45)
+private let sheetSub    = Color(hex: "#1a1a1a").opacity(0.72)
 private let sheetHair   = Color(hex: "#1a1a1a").opacity(0.15)
 private let sheetAccent = Color(hex: "#ff5b14")
 
@@ -31,7 +31,7 @@ struct DevicePickerView: View {
     @Binding var isPresented: Bool
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 sheetBg.ignoresSafeArea()
 

@@ -17,7 +17,7 @@ struct CtrlrApp: App {
             }
             .onAppear {
                 // Fade out launch screen after brief delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation(.easeOut(duration: 0.4)) {
                         isLaunching = false
                     }
