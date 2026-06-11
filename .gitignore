@@ -7,3 +7,8 @@ Ctrlr_MacHelper/build/
 *.xcuserstate
 xcuserdata/
 Screenshots/
+
+# Vendored skills + tooling caches + project-local Claude settings
+.agents/
+.claude/
+.playwright-cli/
