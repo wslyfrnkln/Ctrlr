@@ -10,6 +10,12 @@ struct ContentView: View {
 
     var body: some View {
         CtrlrV2View(midi: midi, model: model, showDevicePicker: $showDevicePicker)
+            .overlay {
+                if !midi.isConnected {
+                    SetupGuideView(midi: midi)
+                        .background(Color(hex: "#e8e4dc").ignoresSafeArea())
+                }
+            }
             .sheet(isPresented: $showDevicePicker) {
                 DevicePickerView(midi: midi, isPresented: $showDevicePicker)
             }
