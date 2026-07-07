@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,6 +13,7 @@
 		68C758043C610B3A7F49E3F3 /* Digital Dismay.otf in Resources */ = {isa = PBXBuildFile; fileRef = FF927BBC0ADA2C28CB81848A /* Digital Dismay.otf */; };
 		9053F448B7F73711BAF641A8 /* CtrlrV2View.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA584E9D1FF4071242D239C /* CtrlrV2View.swift */; };
 		A49A6B47715EB5D1734CA753 /* CtrlrApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010A366B19B8D7EBB5255C7E /* CtrlrApp.swift */; };
+		B9A9E52C2D8403E2506E290C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E122E868BB92E5880F448BBB /* PrivacyInfo.xcprivacy */; };
 		BEC54F8F446359B3D769F088 /* MIDIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DD165EA50C76AC1A1EF580 /* MIDIManager.swift */; };
 		EF96570124014EC5D536C00E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EC1605CC616AF78036225A9 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -25,7 +26,8 @@
 		711630A673914041ADA6623D /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
 		8F5E1FA78AC8FB1EB0D998AF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		9FA584E9D1FF4071242D239C /* CtrlrV2View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CtrlrV2View.swift; sourceTree = "<group>"; };
-		C89C362ADA9CF43F25EE0D72 /* Ctrlr.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ctrlr.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C89C362ADA9CF43F25EE0D72 /* Ctrlr.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Ctrlr.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E122E868BB92E5880F448BBB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FDBE9B8FD0E87867E2BC1657 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FF927BBC0ADA2C28CB81848A /* Digital Dismay.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Digital Dismay.otf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -43,6 +45,7 @@
 				FDBE9B8FD0E87867E2BC1657 /* Info.plist */,
 				711630A673914041ADA6623D /* LaunchScreenView.swift */,
 				09DD165EA50C76AC1A1EF580 /* MIDIManager.swift */,
+				E122E868BB92E5880F448BBB /* PrivacyInfo.xcprivacy */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -103,6 +106,7 @@
 			);
 			mainGroup = D903F715ACCA09C069E594B4;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -118,6 +122,7 @@
 			files = (
 				EF96570124014EC5D536C00E /* Assets.xcassets in Resources */,
 				68C758043C610B3A7F49E3F3 /* Digital Dismay.otf in Resources */,
+				B9A9E52C2D8403E2506E290C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,7 +214,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = UQH23Q44F9;
 				INFOPLIST_FILE = Sources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -227,7 +231,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = UQH23Q44F9;
 				INFOPLIST_FILE = Sources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
