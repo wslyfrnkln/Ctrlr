@@ -9,13 +9,13 @@
 ---
 
 ## Short Description (Promotional Text - 170 characters max)
-Control your DAW wirelessly. Ctrlr transforms your iPhone into a professional MIDI controller with transport controls, faders, and macros over Bluetooth.
+Control your DAW wirelessly. Ctrlr transforms your iPhone into a professional MIDI controller with transport controls, faders, and macros over WiFi.
 
 ---
 
 ## Long Description (4000 characters max)
 
-Ctrlr is a wireless MIDI controller that puts your Digital Audio Workstation at your fingertips. Designed for music producers, engineers, and performers, Ctrlr connects to Ableton Live and other MIDI-compatible software via Bluetooth—no cables, no setup hassle.
+Ctrlr is a wireless MIDI controller that puts your Digital Audio Workstation at your fingertips. Designed for music producers, engineers, and performers, Ctrlr connects to Ableton Live and other MIDI-compatible software over your local WiFi network—no cables, no setup hassle.
 
 **INTUITIVE TRANSPORT CONTROLS**
 Start, stop, and record with tactile buttons designed for quick access. The familiar transport layout means you're productive from the moment you connect. Toggle loop mode and arm tracks without touching your computer.
@@ -26,13 +26,13 @@ The SSL-inspired vertical fader gives you precise control over volume and parame
 **CUSTOMIZABLE MACROS**
 Access 12 programmable macro buttons to trigger your most-used commands. Quick-access macros keep essential controls always within reach, whether you're tracking, mixing, or performing live.
 
-**SEAMLESS BLUETOOTH MIDI**
-Connect wirelessly to your Mac running Ableton Live or any MIDI-compatible DAW. No audio interfaces or MIDI cables required—just pair and play. The connection status LED keeps you informed at a glance.
+**SEAMLESS WIRELESS MIDI**
+Connect wirelessly to your Mac running Ableton Live or any MIDI-compatible DAW via your local WiFi network. No audio interfaces or MIDI cables required—just connect and play. The connection status indicator keeps you informed at a glance.
 
 **BUILT FOR THE STUDIO**
 - Dark interface reduces eye strain during long sessions
 - Responsive controls with visual feedback
-- Minimal latency over Bluetooth MIDI
+- Minimal latency over local WiFi MIDI
 - Works in portrait orientation for one-handed control
 
 **PERFECT FOR**
@@ -46,7 +46,7 @@ Ctrlr works entirely on your device. No accounts, no tracking, no data collectio
 
 **REQUIREMENTS**
 - iPhone running iOS 16.0 or later
-- Mac with Bluetooth MIDI support
+- Mac on the same WiFi network running CtrlrHelper (free companion app)
 - Ableton Live or other MIDI-compatible DAW
 
 Take control of your music. Download Ctrlr today.
@@ -54,13 +54,13 @@ Take control of your music. Download Ctrlr today.
 ---
 
 ## Keywords (100 characters max)
-`MIDI,controller,DAW,Ableton,music,producer,fader,mixer,wireless,Bluetooth,transport,recording`
+`MIDI,controller,DAW,Ableton,music,producer,fader,mixer,wireless,WiFi,transport,recording`
 
 ---
 
 ## What's New (Version 1.0)
 Initial release featuring:
-- Wireless Bluetooth MIDI connectivity
+- Wireless WiFi MIDI connectivity
 - Transport controls (Play, Stop, Record)
 - SSL-style vertical fader with VU meters
 - 12 programmable macro buttons
@@ -87,7 +87,7 @@ Initial release featuring:
 ---
 
 ## Support URL
-[To be added - e.g., https://nomaudio.com/support]
+https://sinaudio.co
 
 ## Marketing URL (Optional)
-[To be added - e.g., https://nomaudio.com/signal]
+https://sinaudio.co
