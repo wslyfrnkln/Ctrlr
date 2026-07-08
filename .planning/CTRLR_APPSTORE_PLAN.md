@@ -94,7 +94,7 @@ git-reversible; no protected files.
 
 #### Task 1.1 — Remove false mic + Bluetooth usage strings
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Ctrlr_XcodeGen/Sources/Info.plist`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/Info.plist`
@@ -110,7 +110,7 @@ other keys untouched — those are correct and required.
 
 #### Task 1.2 — Add ITSAppUsesNonExemptEncryption = false
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Ctrlr_XcodeGen/Sources/Info.plist`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/Info.plist`
@@ -125,7 +125,7 @@ no custom cryptography — encryption-exempt.
 
 #### Task 1.3 — Author + add empty-declarations PrivacyInfo.xcprivacy
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Ctrlr_XcodeGen/Sources/PrivacyInfo.xcprivacy`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/AppModel.swift`, `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/MIDIManager.swift`
@@ -153,7 +153,7 @@ conditional in one file + writes one plain-text notes doc; no new SwiftUI patter
 
 #### Task 2.1 — Surface existing SetupGuideView on main screen when disconnected
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Ctrlr_XcodeGen/Sources/ContentView.swift`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/ContentView.swift`, `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Ctrlr_XcodeGen/Sources/CtrlrV2View.swift`
@@ -178,7 +178,7 @@ CtrlrV2View(...)
 
 #### Task 2.2 — Draft App Review Notes
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Documentation/APP_REVIEW_NOTES.md`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/CLAUDE.md`
@@ -276,7 +276,7 @@ filled with Bluetooth-free copy, both screenshot sizes uploaded, URLs set;
 
 #### Task 4.0 — Correct App Store description: WiFi/local-network, not Bluetooth
 
-**Status:** not_started
+**Status:** done
 **Wave:** 1
 **Files:** `Documentation/APP_STORE_DESCRIPTION.md`
 **Read first:** `/Users/wesleyodd/Judo/projects/SinAudio/Ctrlr App/Documentation/APP_STORE_DESCRIPTION.md`
